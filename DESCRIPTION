@@ -1,0 +1,25 @@
+Package: qgtools
+Type: Package
+Title: Generic Tools for Linear (Mixed) Models in Quantitative Genetics
+Version: 0.0.0.9000
+Authors@R: 
+    person("Peter", "Soerensen", 
+           email = "first.last@example.com", 
+           role = c("aut", "cre"))
+Description: 
+    A generic model-specification and dispatch layer for linear (mixed) models
+    with support for genomic, pedigree, and multi-kernel covariance structures.
+    The package decouples statistical model specification from computational
+    engines.
+License: GPL-3
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3
+Imports:
+    Rcpp,
+    methods,
+    yaml
+LinkingTo:
+    Rcpp,
+    RcppArmadillo
+SystemRequirements: C++17

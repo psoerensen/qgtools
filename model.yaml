@@ -1,0 +1,51 @@
+models:
+  bmi:
+    response: bmi
+    fixed:
+    - regression1
+    - factor1
+    - factor2
+    random:
+    - index: individual
+      intercept: yes
+      slopes: []
+    - index: individual
+      intercept: yes
+      slopes: time
+  height:
+    response: height
+    fixed:
+    - regression1
+    - regression2
+    - factor1
+    random:
+    - index: individual
+      intercept: yes
+      slopes: []
+vcov:
+  pedigree:
+    index: individual
+    traits:
+    - bmi
+    - height
+    kernel: PED
+    structure: unstructured
+  polygenic:
+    index: individual
+    traits:
+    - bmi
+    - height
+    kernel: GRM
+    structure: unstructured
+  genomic:
+    index: individual
+    traits:
+    - bmi
+    - height
+    kernel: G
+    structure: diagonal
+    sets: ~
+kernels:
+- PED
+- GRM
+- G
