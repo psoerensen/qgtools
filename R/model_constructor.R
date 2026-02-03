@@ -146,3 +146,34 @@ qg_parse_formulas <- function(formulas) {
 }
 
 .qg_deparse1 <- function(x) paste(deparse(x, width.cutoff = 500L), collapse = " ")
+
+qg_match_random_effects <- function(parsed_formulas, varcomp) {
+
+  # Collect random-effect indices from formulas
+  formula_indices <- unique(unlist(lapply(parsed_formulas, function(tr) {
+    vapply(tr$random, `[[`, character(1), "index")
+  })))
+
+  # Collect vc indices
+  vc_indices <- vapply(varcomp, function(vc) vc$index, character(1))
+
+  # Missing vc definitions
+  missing_vc <- setdiff(formula_indices, vc_indices)
+  if (length(missing_vc) > 0) {
+    stop(
+      "Random effects present in formulas but missing vc() definitions: ",
+      paste(missing_vc, collapse = ", ")
+    )
+  }
+
+  # Unused vc definitions (warning only)
+  unused_vc <- setdiff(vc_indices, formula_indices)
+  if (length(unused_vc) > 0) {
+    warning(
+      "vc() definitions not referenced in formulas: ",
+      paste(unused_vc, collapse = ", ")
+    )
+  }
+
+  invisible(TRUE)
+}
