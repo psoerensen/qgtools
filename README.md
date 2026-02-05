@@ -49,8 +49,11 @@ environments.
 #### Single and multiple traits examples
 
 ``` r
-## Prepare data source (can be an in-memory data frame or a disk-backed file)
-data <- "data.txt"
+## Data may be provided as an in-memory data frame or as a disk-backed file
+data <- makeDatalist(
+  source = "data.txt",
+  format = "CSV"
+)
 
 ## Prepare pedigree kernel for additive genetic effects
 PED <- makePEDlist(fnPED = "pedigree.txt")
@@ -83,11 +86,40 @@ formulas_mt <- list(
 )
 
 ## Shared variance components induce correlation between traits
+## Shared variance components induce correlation between traits
+## For REML, supplied values are used as starting values
 vcs_mt <- list(
-  dam_env = vc(index = "dam", traits = c("Gl", "BW")),
-  animal_genetic = vc(index = "id", traits = c("Gl", "BW"),
-                       kernel = PED),
-  residual = vc(index = "Residual", traits = c("Gl", "BW"))
+  dam_env = vc(
+    index  = "dam",
+    traits = c("Gl", "BW"),
+    prior  = prior_start(
+      matrix(
+        c(1.0, 0.02,
+          0.2, 2.0),
+        nrow = 2,
+        byrow = TRUE
+      )
+  ),
+
+  animal_genetic = vc(
+    index  = "id",
+    traits = c("Gl", "BW"),
+    kernel = PED,
+    prior  = prior_start(
+      matrix(
+        c(4.0, 0.8,
+          0.8, 3.0),
+        nrow = 2,
+        byrow = TRUE
+      )
+    )
+  ),
+
+  residual = vc(
+    index  = "Residual",
+    traits = c("Gl", "BW"),
+    prior  = prior_diag(c(5, 5))
+  )
 )
 
 ## Fit the model and estimate variance component using REML
