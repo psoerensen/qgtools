@@ -46,7 +46,7 @@ C++/Fortran libraries. This design ensures consistent results across
 interfaces and enables flexible deployment in cloud and HPC
 environments.
 
-#### Single and multiple traits examples
+#### Prepare input data
 
 ``` r
 ## Data may be provided as an in-memory data frame or as a disk-backed file
@@ -56,8 +56,23 @@ data <- makeDatalist(
 )
 
 ## Prepare pedigree kernel for additive genetic effects
-PED <- makePEDlist(fnPED = "pedigree.txt")
+PED <- makePEDlist(fnPED = "pedigree.txt", format = "ASCII", method = "S-D-NonInbred")
 
+## Prepare genomic relationship kernel for additive genomic effects
+GRM <- makeGRMlist(fnPED = "pedigree.txt", format = "BINARY", grm_type = "G-inverse")
+
+# Marker-level genotype container (e.g. PLINK BED/BIM/FAM)
+# This provides information about where genotype data live on disk and how animals map to markers.
+Glist <- makeGlist(
+  bedfiles = "chr.bed",
+  bimfiles = "chr.bim",
+  famfiles = "chr.fam"
+)
+```
+
+#### Single and multiple traits examples
+
+``` r
 ## Single-trait linear mixed model 
 
 ## Model formula:
