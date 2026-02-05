@@ -7,26 +7,43 @@
 vc(index, traits, kernel = NULL, structure = "unstructured", prior = NULL)
 }
 \arguments{
-\item{index}{Character. Indexing variable for the random effect.}
+\item{index}{Character. Grouping variable indexing the random effect.}
 
 \item{traits}{Character vector of trait names.}
 
-\item{kernel}{Kernel object (e.g. PED, GRM, LD, IID).}
+\item{kernel}{Kernel object defining covariance across index levels.}
 
-\item{structure}{Character. Trait covariance structure.}
+\item{structure}{Character. Declared trait covariance structure
+("unstructured", "diagonal", or "identity"). This parameter is currently
+informational and may be used for validation or default prior construction
+in future versions.}
 
 \item{prior}{Optional prior specification object.}
 }
 \value{
-An object of class "vc".
+An object of class \code{"vc"}.
 }
 \description{
 Define a variance component (random effect) in a mixed or hierarchical model.
-A variance component combines:
+Each variance component:
 \itemize{
-\item an indexing factor (e.g. Animal, Dam, SNP)
-\item a kernel defining covariance over index levels
-\item a covariance structure over traits
-\item an optional prior on the trait covariance
+\item corresponds to a random effect in the model formulas,
+\item is indexed by a grouping factor (\code{index}),
+\item uses a kernel to induce covariance across index levels, and
+\item may optionally specify a prior on variance or covariance parameters.
 }
+}
+\details{
+Covariance may be induced explicitly (e.g. via pedigree or GRM-based kernels
+with variance–covariance priors) or implicitly through model structure, such
+as marker-based effects where covariance arises from genotypes, LD, and
+marker-level priors.
+
+The \code{index} must match the grouping factor used for the corresponding
+random effect in the model formulas.
+
+The interpretation of variance and covariance parameters depends on the
+analysis context and the combination of kernel and prior used. Some variance
+components imply explicit variance–covariance matrices, while others induce
+covariance implicitly without forming such matrices.
 }

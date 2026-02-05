@@ -1,19 +1,38 @@
 #' Variance component specification
 #'
 #' Define a variance component (random effect) in a mixed or hierarchical model.
-#' A variance component combines:
-#'   - an indexing factor (e.g. Animal, Dam, SNP)
-#'   - a kernel defining covariance over index levels
-#'   - a covariance structure over traits
-#'   - an optional prior on the trait covariance
+#' Each variance component:
+#' \itemize{
+#'   \item corresponds to a random effect in the model formulas,
+#'   \item is indexed by a grouping factor (\code{index}),
+#'   \item uses a kernel to induce covariance across index levels, and
+#'   \item may optionally specify a prior on variance or covariance parameters.
+#' }
 #'
-#' @param index Character. Indexing variable for the random effect.
+#' Covariance may be induced explicitly (e.g. via pedigree or GRM-based kernels
+#' with variance–covariance priors) or implicitly through model structure, such
+#' as marker-based effects where covariance arises from genotypes, LD, and
+#' marker-level priors.
+#'
+#' The \code{index} must match the grouping factor used for the corresponding
+#' random effect in the model formulas.
+#'
+#' @details
+#' The interpretation of variance and covariance parameters depends on the
+#' analysis context and the combination of kernel and prior used. Some variance
+#' components imply explicit variance–covariance matrices, while others induce
+#' covariance implicitly without forming such matrices.
+#'
+#' @param index Character. Grouping variable indexing the random effect.
 #' @param traits Character vector of trait names.
-#' @param kernel Kernel object (e.g. PED, GRM, LD, IID).
-#' @param structure Character. Trait covariance structure.
+#' @param kernel Kernel object defining covariance across index levels.
+#' @param structure Character. Declared trait covariance structure
+#'   ("unstructured", "diagonal", or "identity"). This parameter is currently
+#'   informational and may be used for validation or default prior construction
+#'   in future versions.
 #' @param prior Optional prior specification object.
 #'
-#' @return An object of class "vc".
+#' @return An object of class \code{"vc"}.
 #' @export
 vc <- function(index,
                traits,
@@ -153,9 +172,17 @@ print.vc <- function(x, ...) {
 #'
 #' @return An object of class \code{"varcomp"}.
 #' @export
-varcomp <- function(...) {
+varcomp <- function(x = NULL, ...) {
 
-  comps <- list(...)
+  ## ---- collect components --------------------------------------------------
+  if (!is.null(x)) {
+    if (!is.list(x)) {
+      stop("If provided, 'x' must be a list of vc objects")
+    }
+    comps <- x
+  } else {
+    comps <- list(...)
+  }
 
   ## ---- empty check ---------------------------------------------------------
   if (length(comps) == 0)
@@ -182,15 +209,13 @@ varcomp <- function(...) {
     warning(
       "Multiple variance components share the same index: ",
       paste(unique(indices[duplicated(indices)]), collapse = ", "),
-      "\nThis is allowed but should be intentional (e.g. multiple kernels on same index)."
+      "\nThis is allowed but should be intentional ",
+      "(e.g. multiple kernels on the same index)."
     )
   }
 
   ## ---- build object --------------------------------------------------------
-  structure(
-    comps,
-    class = "varcomp"
-  )
+  structure(comps, class = "varcomp")
 }
 
 

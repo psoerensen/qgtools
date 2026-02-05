@@ -13,4 +13,28 @@ the structure of additive genetic relationships based on pedigree information.
 \details{
 The \code{PEDlist} object contains no phenotype or model-specific information.
 Linking pedigree records to analysis data is handled at a higher (model) level.
+
+The pedigree file (or data frame) must contain four integer columns: individual ID,
+sire ID, dam or maternal grandsire ID, and a sorting variable (e.g. birth date).
+The sorting variable is only required when modeling inbreeding; otherwise it may
+be set to 0.
+
+The individual IDs in the pedigree file must correspond to the identifiers used
+for the random genetic effect in the model. If the model includes merged random
+genetic effects (e.g. direct and maternal effects), pedigree information must be
+provided for all effects.
+
+When phantom parent grouping is used, unknown parents must be replaced by
+negative group codes to distinguish them from regular individual IDs.
+
+The \code{method} argument controls how the additive genetic relationship
+matrix is constructed from the pedigree:
+\itemize{
+\item \code{"S-D-Inbred"}: Sires and dams, assuming an inbred population.
+\item \code{"S-D-NonInbred"}: Sires and dams, assuming a non-inbred population.
+\item \code{"S-MGS-Inbred"}: Sires and maternal grandsires, assuming an inbred population.
+\item \code{"S-MGS-NonInbred"}: Sires and maternal grandsires, assuming a non-inbred population.
+\item \code{"S-D-NonInbred-PP"}: Sires and dams, non-inbred population, with grouping
+of unknown (phantom) parents.
+}
 }

@@ -1,3 +1,164 @@
+#' Fit a qgtools model
+#'
+#' Fit a mixed or hierarchical model defined by per-trait formulas and variance
+#' components using a specified estimation task.
+#'
+#' Model formulas define which fixed and random effects are included for each
+#' trait using standard Wilkinson syntax. Variance components (\code{vc()} objects)
+#' define how covariance is induced for those random effects via kernels and
+#' optional priors.
+#'
+#' The data supplied to \code{gfit()} may be an in-memory object (e.g. a data frame)
+#' or a disk-backed data source. The fitting procedure accesses only the variables
+#' required by the model and does not assume that all data must reside in memory.
+#'
+#' @details
+#' The \code{task} argument controls how the model is fitted:
+#' \itemize{
+#'   \item \strong{reml}: Restricted maximum likelihood estimation.
+#'   \item \strong{bayes}: Bayesian inference using priors specified in variance
+#'         components.
+#'   \item \strong{solve}: Fixed-parameter solution with known variance components.
+#' }
+#'
+#' Model formulas specify which variables and random effects exist, while variance
+#' components specify how covariance is modeled. This separation allows the same
+#' model specification to be reused across different estimation tasks and data
+#' representations.
+#'
+#' @param formulas Named list of model formulas, one per trait.
+#' @param data Data source containing observations, covariates, and grouping
+#'   variables. May be an in-memory data frame or a disk-backed data source
+#'   supporting variable-wise and row-wise access.
+#' @param vcs Named list of variance component objects created with \code{vc()}.
+#' @param task Character. Estimation task to use. One of \code{"reml"},
+#'   \code{"bayes"}, or \code{"solve"}.
+#' @param control Optional list of task-specific control parameters.
+#' @param ... Additional arguments passed to task-specific fitting routines.
+#'
+#' @return
+#' An object of class \code{"gfit"} containing the fitted model, parameter
+#' estimates, and task-specific output.
+#'
+#' @examples
+#' ## Single-trait and multi-trait animal models using mouse data
+#'
+#' ## Pedigree kernel
+#' PED <- makePEDlist(fnPED = mouse_pedigree)
+#'
+#' ## Single-trait animal model (body weight)
+#' formulas_single <- list(
+#'   BW = BW ~ sex + reps + (1 | dam) + (1 | id)
+#' )
+#'
+#' vcs_single <- list(
+#'
+#'   ## Dam environmental effect
+#'   dam_env = vc(
+#'     index  = "dam",
+#'     traits = "BW"
+#'   ),
+#'
+#'   ## Additive genetic animal effect
+#'   animal_genetic = vc(
+#'     index  = "id",
+#'     traits = "BW",
+#'     kernel = PED
+#'   ),
+#'
+#'   ## Residual variance
+#'   residual = vc(
+#'     index  = "Residual",
+#'     traits = "BW"
+#'   )
+#' )
+#'
+#' fit_single <- gfit(
+#'   formulas = formulas_single,
+#'   data     = mouse,
+#'   vcs      = vcs_single,
+#'   task     = "reml"
+#' )
+#'
+#'
+#' ## Multi-trait animal model (growth and body weight)
+#' formulas_multi <- list(
+#'   Gl = Gl ~ sex + reps + (1 | dam) + (1 | id),
+#'   BW = BW ~ sex + reps + (1 | dam) + (1 | id)
+#' )
+#'
+#' vcs_multi <- list(
+#'
+#'   ## Dam environmental effect (correlated across traits)
+#'   dam_env = vc(
+#'     index  = "dam",
+#'     traits = c("Gl", "BW")
+#'   ),
+#'
+#'   ## Additive genetic animal effect (animal model)
+#'   animal_genetic = vc(
+#'     index  = "id",
+#'     traits = c("Gl", "BW"),
+#'     kernel = PED
+#'   ),
+#'
+#'   ## Residual covariance between traits
+#'   residual = vc(
+#'     index  = "Residual",
+#'     traits = c("Gl", "BW")
+#'   )
+#' )
+#'
+#' fit_multi <- gfit(
+#'   formulas = formulas_multi,
+#'   data     = mouse,
+#'   vcs      = vcs_multi,
+#'   task     = "reml"
+#' )
+#'
+#' @export
+gfit <- function(formulas,
+                 data,
+                 vcs,
+                 task = c("reml", "bayes", "solve"),
+                 control = list(),
+                 ...) {
+
+  ## ---- task ---------------------------------------------------------------
+  task <- match.arg(task)
+
+  ## ---- basic validation ---------------------------------------------------
+  if (!is.list(formulas) || length(formulas) < 1)
+    stop("'formulas' must be a non-empty list of model formulas")
+
+  if (!is.data.frame(data))
+    stop("'data' must be a data frame")
+
+  if (!is.list(vcs) || !all(vapply(vcs, inherits, logical(1), "vc")))
+    stop("'vcs' must be a list of 'vc' objects")
+
+  ## ---- build internal model representation --------------------------------
+  model <- list(
+    formulas = formulas,
+    data     = data,
+    vcs      = vcs
+  )
+
+  ## ---- dispatch by task ---------------------------------------------------
+  fit <- switch(
+    task,
+    reml  = fit_reml(model, control = control, ...),
+    bayes = fit_bayes(model, control = control, ...),
+    solve = fit_solve(model, control = control, ...)
+  )
+
+  ## ---- attach metadata ----------------------------------------------------
+  fit$task <- task
+  class(fit) <- c("gfit", class(fit))
+
+  fit
+}
+
 # ------------------------------------------------------------------
 # qgtools: Formula parsing utilities
 # ------------------------------------------------------------------

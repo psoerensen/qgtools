@@ -4,7 +4,7 @@
 \alias{varcomp}
 \title{Variance component collection}
 \usage{
-varcomp(...)
+varcomp(x = NULL, ...)
 }
 \arguments{
 \item{...}{Named variance component objects of class \code{"vc"}.}
