@@ -34,6 +34,31 @@ framework.
   Data are treated as a data source, allowing both in-memory and
   disk-backed datasets to be used transparently.
 
+## Performance and deployment
+
+qgtools is designed as a lightweight R interface to high-performance
+computing backends.  
+Computationally intensive components (e.g. likelihood evaluation, large
+linear algebra, and sampling) can be implemented in compiled languages
+such as **C++ or Fortran**, while R is used for model specification and
+orchestration.
+
+This separation provides: - high computational performance, -
+scalability to large datasets, - and a clear boundary between model
+definition and numerical implementation.
+
+For deployment, qgtools can be packaged into **containerized
+environments** (e.g. Docker or Singularity), allowing models to be
+executed reproducibly on high-performance computing platforms and cloud
+infrastructures such as **AWS** and **Azure**. Containers encapsulate
+the required libraries and runtimes and can be deployed to batch
+systems, Kubernetes clusters, or managed cloud services without exposing
+source code.
+
+This design enables qgtools to act as a unifying modeling layer while
+supporting multiple computational backends and deployment scenarios,
+from local workstations to large-scale cloud and HPC environments.
+
 **qgtools** handles large-scale data by taking advantage of:
 
 - multi-core processing using [openMP](https://www.openmp.org/)  
@@ -44,6 +69,18 @@ framework.
 - fast and memory-efficient batch processing of genotype data stored in
   binary files (e.g. [PLINK](https://www.cog-genomics.org/plink2)
   bedfiles)
+
+## R and Python interfaces
+
+qgtools is designed with a language-agnostic core, allowing both **R and
+Python** interfaces to interact with the same underlying computational
+backends.
+
+Model specification and orchestration can be performed in either R or
+Python, while computationally intensive tasks are handled by shared
+C++/Fortran libraries. This design ensures consistent results across
+interfaces and enables flexible deployment in cloud and HPC
+environments.
 
 ## Example
 
@@ -91,4 +128,31 @@ vcs_mt <- list(
 
 ## Fit the model and estimate variance component using REML
 fit_mt <- gfit(formulas_mt, data, vcs_mt, task = "reml")
+```
+
+## Example R vs Python interface
+
+``` r
+# R interface
+formulas <- list(
+  BW = BW ~ sex + reps + (1 | id)
+)
+
+vcs <- list(
+  animal = vc(index = "id", traits = "BW", kernel = PED)
+)
+
+fit <- gfit(formulas, data, vcs, task = "reml")
+
+# Python interface
+model = Model(
+    formulas={
+        "BW": "BW ~ sex + reps + (1 | id)"
+    },
+    vcs=[
+        vc(index="id", traits=["BW"], kernel=PED)
+    ]
+)
+
+fit = gfit(model, data, task="reml")
 ```
