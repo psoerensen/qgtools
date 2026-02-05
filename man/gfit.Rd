@@ -63,6 +63,9 @@ representations.
 \examples{
 ## Single-trait and multi-trait animal models using mouse data
 
+## Pedigree kernel
+PED <- makePEDlist(fnPED = mouse_pedigree)
+
 ## Single-trait animal model (body weight)
 formulas_single <- list(
   BW = BW ~ sex + reps + (1 | dam) + (1 | id)
@@ -76,11 +79,11 @@ vcs_single <- list(
     traits = "BW"
   ),
 
-  ## Additive genetic animal effect (pedigree-based)
+  ## Additive genetic animal effect
   animal_genetic = vc(
     index  = "id",
     traits = "BW",
-    kernel = makePEDlist(fnPED = mouse_pedigree)
+    kernel = PED
   ),
 
   ## Residual variance
@@ -116,7 +119,7 @@ vcs_multi <- list(
   animal_genetic = vc(
     index  = "id",
     traits = c("Gl", "BW"),
-    kernel = makePEDlist(fnPED = mouse_pedigree)
+    kernel = PED
   ),
 
   ## Residual covariance between traits

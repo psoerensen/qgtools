@@ -7,10 +7,12 @@
 makePEDlist(fnPED = NULL, format = "ASCII", method = "S-D-NonInbred")
 }
 \description{
-Create a pedigree data specification object (\code{PEDlist}) used to define
-the structure of additive genetic relationships based on pedigree information.
+Pedigree kernels are standalone objects and can be reused across variance components and model fits.
 }
 \details{
+Create a pedigree data specification object (\code{PEDlist}) used to define
+the structure of additive genetic relationships based on pedigree information.
+
 The \code{PEDlist} object contains no phenotype or model-specific information.
 Linking pedigree records to analysis data is handled at a higher (model) level.
 
