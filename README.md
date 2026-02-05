@@ -48,19 +48,50 @@ framework.
 ## Example
 
 ``` r
-data <- 
+## Example
+```
 
+``` r
+## Prepare data source (can be an in-memory data frame or a disk-backed file)
+data <- "data.txt"
+
+## Prepare pedigree kernel for additive genetic effects
 PED <- makePEDlist(fnPED = "pedigree.txt")
 
+## ---- Single-trait animal model --------------------------------------------
+
+## Model formula:
+## (1 | id) represents the additive genetic (animal) effect
 formulas <- list(
   BW = BW ~ sex + reps + (1 | dam) + (1 | id)
 )
 
+## Variance components define how covariance is modeled
 vcs <- list(
-  dam_env = vc(index = "dam", traits = "BW"),
-  animal_genetic = vc(index = "id", traits = "BW", kernel = PED),
-  residual = vc(index = "Residual", traits = "BW")
+  dam_env = vc(index = "dam", traits = "BW"),          # dam environmental effect
+  animal_genetic = vc(index = "id", traits = "BW",
+                       kernel = PED),                  # additive genetic effect
+  residual = vc(index = "Residual", traits = "BW")    # residual variance
 )
 
+## Fit the model using REML
 fit <- gfit(formulas, data, vcs, task = "reml")
+
+## ---- Multi-trait animal model ---------------------------------------------
+
+## Same model structure, now for two correlated traits
+formulas_mt <- list(
+  Gl = Gl ~ sex + reps + (1 | dam) + (1 | id),
+  BW = BW ~ sex + reps + (1 | dam) + (1 | id)
+)
+
+## Shared variance components induce correlation between traits
+vcs_mt <- list(
+  dam_env = vc(index = "dam", traits = c("Gl", "BW")),
+  animal_genetic = vc(index = "id", traits = c("Gl", "BW"),
+                       kernel = PED),
+  residual = vc(index = "Residual", traits = c("Gl", "BW"))
+)
+
+fit_mt <- gfit(formulas_mt, data, vcs_mt, task = "reml")
 ```
