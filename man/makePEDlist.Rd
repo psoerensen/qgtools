@@ -4,39 +4,92 @@
 \alias{makePEDlist}
 \title{Create a PEDlist object}
 \usage{
-makePEDlist(fnPED = NULL, format = "ASCII", method = "S-D-NonInbred")
+makePEDlist(
+  fnPED = NULL,
+  format = c("SIMPLE", "DMU", "PLINK", "CUSTOM"),
+  encoding = c("ASCII", "BINARY"),
+  method = "S-D-NonInbred",
+  columns = NULL
+)
+}
+\arguments{
+\item{fnPED}{Character. Path to the pedigree file.}
+
+\item{format}{Character. Pedigree format specification. One of
+\code{"DMU"}, \code{"SIMPLE"}, \code{"PLINK"}, or \code{"CUSTOM"}.}
+
+\item{encoding}{Character. One of \code{"ASCII"} or \code{"BINARY"}.
+ASCII input is expected to conform to INTEGER\emph{4 and REAL}4 ranges.
+Binary input must follow unformatted Fortran conventions.}
+
+\item{method}{Character. Pedigree relationship construction method.}
+
+\item{columns}{Optional named character vector or list defining column
+mappings for \code{format = "CUSTOM"}.}
 }
 \description{
-Pedigree kernels are standalone objects and can be reused across variance components and model fits.
+Pedigree kernels are standalone objects and can be reused across variance
+components and model fits.
 }
 \details{
 Create a pedigree data specification object (\code{PEDlist}) used to define
 the structure of additive genetic relationships based on pedigree information.
 
+By default, \code{makePEDlist()} assumes a simple pedigree format with columns
+identifying individual, sire, dam, and an optional ordering variable.
+
 The \code{PEDlist} object contains no phenotype or model-specific information.
 Linking pedigree records to analysis data is handled at a higher (model) level.
 
-The pedigree file (or data frame) must contain four integer columns: individual ID,
-sire ID, dam or maternal grandsire ID, and a sorting variable (e.g. birth date).
-The sorting variable is only required when modeling inbreeding; otherwise it may
-be set to 0.
+The pedigree file (or data frame) must contain information identifying
+individuals and their parents. The exact interpretation of columns depends
+on the selected pedigree \code{format}.
 
-The individual IDs in the pedigree file must correspond to the identifiers used
-for the random genetic effect in the model. If the model includes merged random
-genetic effects (e.g. direct and maternal effects), pedigree information must be
-provided for all effects.
+For formats that support inbreeding, a sorting variable (e.g. birth date) may
+be required; otherwise it may be set to 0.
 
 When phantom parent grouping is used, unknown parents must be replaced by
 negative group codes to distinguish them from regular individual IDs.
-
-The \code{method} argument controls how the additive genetic relationship
-matrix is constructed from the pedigree:
-\itemize{
-\item \code{"S-D-Inbred"}: Sires and dams, assuming an inbred population.
-\item \code{"S-D-NonInbred"}: Sires and dams, assuming a non-inbred population.
-\item \code{"S-MGS-Inbred"}: Sires and maternal grandsires, assuming an inbred population.
-\item \code{"S-MGS-NonInbred"}: Sires and maternal grandsires, assuming a non-inbred population.
-\item \code{"S-D-NonInbred-PP"}: Sires and dams, non-inbred population, with grouping
-of unknown (phantom) parents.
 }
+\examples{
+## DMU-compatible pedigree (default use case)
+\dontrun{
+PED_dmu <- makePEDlist(
+  fnPED    = "pedigree.txt",
+  format   = "DMU",
+  encoding = "ASCII",
+  method   = "S-D-NonInbred"
+)
+}
+
+## Simple text pedigree (ID, sire, dam, optional order)
+\dontrun{
+PED_simple <- makePEDlist(
+  fnPED  = "ped.txt",
+  format = "SIMPLE"
+)
+}
+
+## PLINK .fam pedigree
+\dontrun{
+PED_plink <- makePEDlist(
+  fnPED  = "data.fam",
+  format = "PLINK"
+)
+}
+
+## Custom pedigree schema with user-defined column mapping
+\dontrun{
+PED_custom <- makePEDlist(
+  fnPED  = "ped.txt",
+  format = "CUSTOM",
+  columns = list(
+    id    = "animal",
+    sire  = "father",
+    dam   = "mother",
+    order = "birth_year"
+  )
+)
+}
+
 }

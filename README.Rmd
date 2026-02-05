@@ -49,7 +49,7 @@ data <- makeDatalist(
 )
 
 ## Prepare pedigree kernel for additive genetic effects
-PED <- makePEDlist(fnPED = "pedigree.txt", format = "TEXT", method = "S-D-NonInbred")
+PED <- makePEDlist(fnPED = "pedigree.txt", method = "S-D-NonInbred")
 
 ## Prepare genomic relationship kernel for additive genomic effects
 GRM <- makeGRMlist(fnGRM = "grm_inverse.txt", format = "BINARY", grm_type = "G-inverse")

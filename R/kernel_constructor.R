@@ -8,53 +8,99 @@
 
 #' Create a PEDlist object
 #'
-#' Pedigree kernels are standalone objects and can be reused across variance components and model fits.
+#' Pedigree kernels are standalone objects and can be reused across variance
+#' components and model fits.
 #'
 #' Create a pedigree data specification object (\code{PEDlist}) used to define
 #' the structure of additive genetic relationships based on pedigree information.
 #'
+#' By default, \code{makePEDlist()} assumes a simple pedigree format with columns
+#' identifying individual, sire, dam, and an optional ordering variable.
+#'
 #' The \code{PEDlist} object contains no phenotype or model-specific information.
 #' Linking pedigree records to analysis data is handled at a higher (model) level.
 #'
-#' The pedigree file (or data frame) must contain four integer columns: individual ID,
-#' sire ID, dam or maternal grandsire ID, and a sorting variable (e.g. birth date).
-#' The sorting variable is only required when modeling inbreeding; otherwise it may
-#' be set to 0.
+#' The pedigree file (or data frame) must contain information identifying
+#' individuals and their parents. The exact interpretation of columns depends
+#' on the selected pedigree \code{format}.
 #'
-#' The individual IDs in the pedigree file must correspond to the identifiers used
-#' for the random genetic effect in the model. If the model includes merged random
-#' genetic effects (e.g. direct and maternal effects), pedigree information must be
-#' provided for all effects.
+#' For formats that support inbreeding, a sorting variable (e.g. birth date) may
+#' be required; otherwise it may be set to 0.
 #'
 #' When phantom parent grouping is used, unknown parents must be replaced by
 #' negative group codes to distinguish them from regular individual IDs.
 #'
-#' @details
-#' The \code{method} argument controls how the additive genetic relationship
-#' matrix is constructed from the pedigree:
-#' \itemize{
-#'   \item \code{"S-D-Inbred"}: Sires and dams, assuming an inbred population.
-#'   \item \code{"S-D-NonInbred"}: Sires and dams, assuming a non-inbred population.
-#'   \item \code{"S-MGS-Inbred"}: Sires and maternal grandsires, assuming an inbred population.
-#'   \item \code{"S-MGS-NonInbred"}: Sires and maternal grandsires, assuming a non-inbred population.
-#'   \item \code{"S-D-NonInbred-PP"}: Sires and dams, non-inbred population, with grouping
-#'         of unknown (phantom) parents.
+#' @param fnPED Character. Path to the pedigree file.
+#' @param format Character. Pedigree format specification. One of
+#'   \code{"DMU"}, \code{"SIMPLE"}, \code{"PLINK"}, or \code{"CUSTOM"}.
+#' @param encoding Character. One of \code{"ASCII"} or \code{"BINARY"}.
+#'   ASCII input is expected to conform to INTEGER*4 and REAL*4 ranges.
+#'   Binary input must follow unformatted Fortran conventions.
+#' @param method Character. Pedigree relationship construction method.
+#' @param columns Optional named character vector or list defining column
+#'   mappings for \code{format = "CUSTOM"}.
+#'
+#' @examples
+#' ## DMU-compatible pedigree (default use case)
+#' \dontrun{
+#' PED_dmu <- makePEDlist(
+#'   fnPED    = "pedigree.txt",
+#'   format   = "DMU",
+#'   encoding = "ASCII",
+#'   method   = "S-D-NonInbred"
+#' )
 #' }
-
+#'
+#' ## Simple text pedigree (ID, sire, dam, optional order)
+#' \dontrun{
+#' PED_simple <- makePEDlist(
+#'   fnPED  = "ped.txt",
+#'   format = "SIMPLE"
+#' )
+#' }
+#'
+#' ## PLINK .fam pedigree
+#' \dontrun{
+#' PED_plink <- makePEDlist(
+#'   fnPED  = "data.fam",
+#'   format = "PLINK"
+#' )
+#' }
+#'
+#' ## Custom pedigree schema with user-defined column mapping
+#' \dontrun{
+#' PED_custom <- makePEDlist(
+#'   fnPED  = "ped.txt",
+#'   format = "CUSTOM",
+#'   columns = list(
+#'     id    = "animal",
+#'     sire  = "father",
+#'     dam   = "mother",
+#'     order = "birth_year"
+#'   )
+#' )
+#' }
+#'
 #' @export
 makePEDlist <- function(fnPED = NULL,
-                        format = "ASCII",
-                        method = "S-D-NonInbred") {
+                        format   = c("SIMPLE", "DMU", "PLINK", "CUSTOM"),
+                        encoding = c("ASCII", "BINARY"),
+                        method   = "S-D-NonInbred",
+                        columns  = NULL) {
 
+  format   <- match.arg(format)
+  encoding <- match.arg(encoding)
+
+  ## ---- basic checks ------------------------------------------------------
   if (!is.null(fnPED) && (!is.character(fnPED) || length(fnPED) != 1)) {
     stop("'fnPED' must be a single character string.")
   }
 
-  format <- toupper(format)
-  if (!format %in% c("ASCII", "BINARY")) {
-    stop("'format' must be either 'ASCII' or 'BINARY'.")
+  if (format == "CUSTOM" && is.null(columns)) {
+    stop("'columns' must be supplied when format = 'CUSTOM'.")
   }
 
+  ## ---- method validation ------------------------------------------------
   allowed_methods <- c(
     "S-D-Inbred",
     "S-D-NonInbred",
@@ -78,14 +124,25 @@ makePEDlist <- function(fnPED = NULL,
     "S-D-NonInbred-PP" = 6
   )
 
+  ## ---- default column semantics -----------------------------------------
+  default_columns <- switch(
+    format,
+    DMU    = c(id = "id", sire = "sire", dam = "dam_or_mgs", order = "order"),
+    SIMPLE = c(id = "id", sire = "sire", dam = "dam", order = "order"),
+    PLINK  = c(id = "IID", sire = "PID", dam = "MID"),
+    CUSTOM = columns
+  )
+
+  ## ---- build object ------------------------------------------------------
   structure(
     list(
       kernel_type = "additive",
       fnPED       = fnPED,
       format      = format,
+      encoding    = encoding,
       method      = method,
       method_code = unname(method_map[method]),
-      columns     = c("id", "sire", "dam_or_mgs", "order")
+      columns     = default_columns
     ),
     class = "PEDlist"
   )
@@ -97,7 +154,7 @@ makePEDlist <- function(fnPED = NULL,
 #'
 #' @param x An object of class \code{"PEDlist"}.
 #' @param check.file Logical. Check that the pedigree file exists.
-#' @param check.format Logical. Lightweight structure check (TEXT only).
+#' @param check.format Logical. Lightweight structure check (ASCII only).
 #' @param check.logic Logical. Optional deep pedigree logic checks (default FALSE).
 #'
 #' @export
@@ -106,13 +163,13 @@ validatePEDlist <- function(x,
                             check.format = TRUE,
                             check.logic  = FALSE) {
 
-  ## ---- class & structure -----------------------------------------------------
+  ## ---- class & structure -------------------------------------------------
   if (!inherits(x, "PEDlist")) {
     stop("Object must be of class 'PEDlist'.")
   }
 
   required_fields <- c(
-    "kernel_type", "fnPED", "format",
+    "kernel_type", "fnPED", "format", "encoding",
     "method", "method_code", "columns"
   )
 
@@ -128,11 +185,20 @@ validatePEDlist <- function(x,
     stop("Invalid 'kernel_type' for PEDlist: ", x$kernel_type)
   }
 
-  if (!x$format %in% c("TEXT", "BINARY")) {
-    stop("Invalid 'format' in PEDlist: ", x$format)
+  ## ---- format & encoding -------------------------------------------------
+  valid_formats <- c("DMU", "SIMPLE", "PLINK", "CUSTOM")
+  if (!x$format %in% valid_formats) {
+    stop(
+      "Invalid 'format' in PEDlist: ", x$format,
+      ". Must be one of: ", paste(valid_formats, collapse = ", ")
+    )
   }
 
-  ## ---- file existence --------------------------------------------------------
+  if (!x$encoding %in% c("ASCII", "BINARY")) {
+    stop("Invalid 'encoding' in PEDlist: ", x$encoding)
+  }
+
+  ## ---- file existence ----------------------------------------------------
   if (check.file) {
     if (is.null(x$fnPED) || !nzchar(x$fnPED)) {
       stop("'fnPED' is NULL or empty.")
@@ -142,8 +208,9 @@ validatePEDlist <- function(x,
     }
   }
 
-  ## ---- lightweight structure check (safe for large files) -------------------
-  if (check.format && check.file && x$format == "TEXT") {
+  ## ---- lightweight structure check --------------------------------------
+  ## Only meaningful for ASCII input
+  if (check.format && check.file && x$encoding == "ASCII") {
 
     ped_head <- tryCatch(
       utils::read.table(
@@ -167,13 +234,14 @@ validatePEDlist <- function(x,
     }
   }
 
-  ## ---- optional deep logic checks (opt-in only) ------------------------------
-  if (check.logic && check.file && x$format == "TEXT") {
+  ## ---- optional deep logic checks ----------------------------------------
+  if (check.logic && check.file && x$encoding == "ASCII") {
 
     if (!requireNamespace("data.table", quietly = TRUE)) {
       stop("Package 'data.table' is required for logical pedigree checks.")
     }
 
+    ## Read only ID and parent columns
     ped <- data.table::fread(
       x$fnPED,
       select = 1:3,
@@ -195,11 +263,11 @@ print.PEDlist <- function(x, ...) {
   cat("  Kernel type : ", x$kernel_type, "\n", sep = "")
   cat("  File        : ", x$fnPED, "\n", sep = "")
   cat("  Format      : ", x$format, "\n", sep = "")
+  cat("  Encoding    : ", x$encoding, "\n", sep = "")
   cat("  Method      : ", x$method,
       " (code ", x$method_code, ")\n", sep = "")
   invisible(x)
 }
-
 
 
 #' Create a GRMlist object
