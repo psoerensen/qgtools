@@ -34,42 +34,6 @@ framework.
   Data are treated as a data source, allowing both in-memory and
   disk-backed datasets to be used transparently.
 
-## Performance and deployment
-
-qgtools is designed as a lightweight R (or Python) interface to
-high-performance computing backends.  
-Computationally intensive components (e.g. likelihood evaluation, large
-linear algebra, and sampling) can be implemented in compiled languages
-such as **C++ or Fortran**, while R (or Python) is used for model
-specification and orchestration.
-
-This separation provides: - high computational performance, -
-scalability to large datasets, - and a clear boundary between model
-definition and numerical implementation.
-
-For deployment, qgtools can be packaged into **containerized
-environments** (e.g. Docker or Singularity), allowing models to be
-executed reproducibly on high-performance computing platforms and cloud
-infrastructures such as **AWS** and **Azure**. Containers encapsulate
-the required libraries and runtimes and can be deployed to batch
-systems, Kubernetes clusters, or managed cloud services without exposing
-source code.
-
-This design enables qgtools to act as a unifying modeling layer while
-supporting multiple computational backends and deployment scenarios,
-from local workstations to large-scale cloud and HPC environments.
-
-**qgtools** handles large-scale data by taking advantage of:
-
-- multi-core processing using [openMP](https://www.openmp.org/)  
-- multithreaded matrix operations implemented in BLAS libraries
-  (e.g. [OpenBLAS](https://www.openblas.net/),
-  [ATLAS](https://math-atlas.sourceforge.net/) or
-  [MKL](https://en.wikipedia.org/wiki/Math_Kernel_Library))  
-- fast and memory-efficient batch processing of genotype data stored in
-  binary files (e.g. [PLINK](https://www.cog-genomics.org/plink2)
-  bedfiles)
-
 ## R and Python interfaces
 
 qgtools is designed with a language-agnostic core, allowing both **R and
@@ -82,7 +46,7 @@ C++/Fortran libraries. This design ensures consistent results across
 interfaces and enables flexible deployment in cloud and HPC
 environments.
 
-## Example
+#### Single and multiple traits examples
 
 ``` r
 ## Prepare data source (can be an in-memory data frame or a disk-backed file)
@@ -130,7 +94,7 @@ vcs_mt <- list(
 fit_mt <- gfit(formulas_mt, data, vcs_mt, task = "reml")
 ```
 
-## Example R vs Python interface
+#### Example R vs Python interface
 
 ``` r
 # R interface
@@ -156,3 +120,39 @@ model = Model(
 
 fit = gfit(model, data, task="reml")
 ```
+
+## Performance and deployment
+
+qgtools is designed as a lightweight R (or Python) interface to
+high-performance computing backends.  
+Computationally intensive components (e.g. likelihood evaluation, large
+linear algebra, and sampling) can be implemented in compiled languages
+such as **C++ or Fortran**, while R (or Python) is used for model
+specification and orchestration.
+
+This separation provides: - high computational performance, -
+scalability to large datasets, - and a clear boundary between model
+definition and numerical implementation.
+
+For deployment, qgtools can be packaged into **containerized
+environments** (e.g. Docker or Singularity), allowing models to be
+executed reproducibly on high-performance computing platforms and cloud
+infrastructures such as **AWS** and **Azure**. Containers encapsulate
+the required libraries and runtimes and can be deployed to batch
+systems, Kubernetes clusters, or managed cloud services without exposing
+source code.
+
+This design enables qgtools to act as a unifying modeling layer while
+supporting multiple computational backends and deployment scenarios,
+from local workstations to large-scale cloud and HPC environments.
+
+**qgtools** handles large-scale data by taking advantage of:
+
+- multi-core processing using [openMP](https://www.openmp.org/)  
+- multithreaded matrix operations implemented in BLAS libraries
+  (e.g. [OpenBLAS](https://www.openblas.net/),
+  [ATLAS](https://math-atlas.sourceforge.net/) or
+  [MKL](https://en.wikipedia.org/wiki/Math_Kernel_Library))  
+- fast and memory-efficient batch processing of genotype data stored in
+  binary files (e.g. [PLINK](https://www.cog-genomics.org/plink2)
+  bedfiles)
