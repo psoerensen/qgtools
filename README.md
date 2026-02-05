@@ -48,17 +48,13 @@ framework.
 ## Example
 
 ``` r
-## Example
-```
-
-``` r
 ## Prepare data source (can be an in-memory data frame or a disk-backed file)
 data <- "data.txt"
 
 ## Prepare pedigree kernel for additive genetic effects
 PED <- makePEDlist(fnPED = "pedigree.txt")
 
-## ---- Single-trait animal model --------------------------------------------
+## Single-trait linear mixed model 
 
 ## Model formula:
 ## (1 | id) represents the additive genetic (animal) effect
@@ -74,10 +70,10 @@ vcs <- list(
   residual = vc(index = "Residual", traits = "BW")    # residual variance
 )
 
-## Fit the model using REML
+## Fit the model and estimate variance component using REML
 fit <- gfit(formulas, data, vcs, task = "reml")
 
-## ---- Multi-trait animal model ---------------------------------------------
+## Multi-trait linear mixed model 
 
 ## Same model structure, now for two correlated traits
 formulas_mt <- list(
@@ -93,5 +89,6 @@ vcs_mt <- list(
   residual = vc(index = "Residual", traits = c("Gl", "BW"))
 )
 
+## Fit the model and estimate variance component using REML
 fit_mt <- gfit(formulas_mt, data, vcs_mt, task = "reml")
 ```
