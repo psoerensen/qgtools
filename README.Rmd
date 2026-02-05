@@ -30,8 +30,8 @@ The key idea behind qgtools is to **separate model specification from model fitt
 
 ## Performance and deployment
 
-qgtools is designed as a lightweight R interface to high-performance computing backends.  
-Computationally intensive components (e.g. likelihood evaluation, large linear algebra, and sampling) can be implemented in compiled languages such as **C++ or Fortran**, while R is used for model specification and orchestration.
+qgtools is designed as a lightweight R (or Python) interface to high-performance computing backends.  
+Computationally intensive components (e.g. likelihood evaluation, large linear algebra, and sampling) can be implemented in compiled languages such as **C++ or Fortran**, while R (or Python) is used for model specification and orchestration.
 
 This separation provides:
 - high computational performance,

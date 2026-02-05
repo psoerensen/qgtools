@@ -36,12 +36,12 @@ framework.
 
 ## Performance and deployment
 
-qgtools is designed as a lightweight R interface to high-performance
-computing backends.  
+qgtools is designed as a lightweight R (or Python) interface to
+high-performance computing backends.  
 Computationally intensive components (e.g. likelihood evaluation, large
 linear algebra, and sampling) can be implemented in compiled languages
-such as **C++ or Fortran**, while R is used for model specification and
-orchestration.
+such as **C++ or Fortran**, while R (or Python) is used for model
+specification and orchestration.
 
 This separation provides: - high computational performance, -
 scalability to large datasets, - and a clear boundary between model
