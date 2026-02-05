@@ -97,7 +97,7 @@ makePEDlist <- function(fnPED = NULL,
 #'
 #' @param x An object of class \code{"PEDlist"}.
 #' @param check.file Logical. Check that the pedigree file exists.
-#' @param check.format Logical. Lightweight structure check (ASCII only).
+#' @param check.format Logical. Lightweight structure check (TEXT only).
 #' @param check.logic Logical. Optional deep pedigree logic checks (default FALSE).
 #'
 #' @export
@@ -128,7 +128,7 @@ validatePEDlist <- function(x,
     stop("Invalid 'kernel_type' for PEDlist: ", x$kernel_type)
   }
 
-  if (!x$format %in% c("ASCII", "BINARY")) {
+  if (!x$format %in% c("TEXT", "BINARY")) {
     stop("Invalid 'format' in PEDlist: ", x$format)
   }
 
@@ -143,7 +143,7 @@ validatePEDlist <- function(x,
   }
 
   ## ---- lightweight structure check (safe for large files) -------------------
-  if (check.format && check.file && x$format == "ASCII") {
+  if (check.format && check.file && x$format == "TEXT") {
 
     ped_head <- tryCatch(
       utils::read.table(
@@ -168,7 +168,7 @@ validatePEDlist <- function(x,
   }
 
   ## ---- optional deep logic checks (opt-in only) ------------------------------
-  if (check.logic && check.file && x$format == "ASCII") {
+  if (check.logic && check.file && x$format == "TEXT") {
 
     if (!requireNamespace("data.table", quietly = TRUE)) {
       stop("Package 'data.table' is required for logical pedigree checks.")
@@ -212,7 +212,7 @@ print.PEDlist <- function(x, ...) {
 #'
 #' @param fnGRM Character string. File name of the GRM (or its inverse).
 #' @param format Character string. Format of the GRM file
-#'   (\code{"ASCII"} or \code{"BINARY"}).
+#'   (\code{"TEXT"} or \code{"BINARY"}).
 #' @param grm_type Character string specifying the GRM representation.
 #'   Typical values include \code{"G"}, \code{"Ginv"}, or \code{"scaled_G"}.
 #'
@@ -228,8 +228,8 @@ makeGRMlist <- function(fnGRM = NULL,
   }
 
   format <- toupper(format)
-  if (!format %in% c("ASCII", "BINARY")) {
-    stop("'format' must be either 'ASCII' or 'BINARY'.")
+  if (!format %in% c("TEXT", "BINARY")) {
+    stop("'format' must be either 'TEXT' or 'BINARY'.")
   }
 
   allowed_types <- c("G", "Ginv", "scaled_G")
@@ -262,7 +262,7 @@ makeGRMlist <- function(fnGRM = NULL,
 #'
 #' @param fnGRM Character string. File name of the GRM (or its inverse).
 #' @param format Character string. Format of the GRM file
-#'   (\code{"ASCII"} or \code{"BINARY"}).
+#'   (\code{"TEXT"} or \code{"BINARY"}).
 #' @param grm_type Character string specifying the GRM representation.
 #'   Typical values include \code{"G"}, \code{"Ginv"}, or \code{"scaled_G"}.
 #'
@@ -278,8 +278,8 @@ makeGRMlist <- function(fnGRM = NULL,
   }
 
   format <- toupper(format)
-  if (!format %in% c("ASCII", "BINARY")) {
-    stop("'format' must be either 'ASCII' or 'BINARY'.")
+  if (!format %in% c("TEXT", "BINARY")) {
+    stop("'format' must be either 'TEXT' or 'BINARY'.")
   }
 
   allowed_types <- c("G", "Ginv", "scaled_G")
@@ -309,7 +309,7 @@ makeGRMlist <- function(fnGRM = NULL,
 #'
 #' @param x An object of class \code{"GRMlist"}.
 #' @param check.file Logical. Check that the GRM file exists.
-#' @param check.format Logical. Lightweight structure check (ASCII only).
+#' @param check.format Logical. Lightweight structure check (TEXT only).
 #'
 #' @return Invisibly returns TRUE if validation succeeds.
 #'
@@ -337,7 +337,7 @@ validateGRMlist <- function(x,
     stop("Invalid 'kernel_type' for GRMlist: ", x$kernel_type)
   }
 
-  if (!x$format %in% c("ASCII", "BINARY")) {
+  if (!x$format %in% c("TEXT", "BINARY")) {
     stop("Invalid 'format' in GRMlist: ", x$format)
   }
 
@@ -351,8 +351,8 @@ validateGRMlist <- function(x,
     }
   }
 
-  ## ---- lightweight structure check (ASCII only) -----------------------------
-  if (check.format && check.file && x$format == "ASCII") {
+  ## ---- lightweight structure check (TEXT only) -----------------------------
+  if (check.format && check.file && x$format == "TEXT") {
 
     grm_head <- tryCatch(
       utils::read.table(
@@ -369,7 +369,7 @@ validateGRMlist <- function(x,
 
     if (ncol(grm_head) < 3) {
       stop(
-        "ASCII GRM file must contain at least 3 columns ",
+        "TEXT GRM file must contain at least 3 columns ",
         "(row, column, value)."
       )
     }
@@ -401,7 +401,7 @@ print.GRMlist <- function(x, ...) {
 #'
 #' @param fnLD Character string. File name of the LD matrix (or its inverse).
 #' @param format Character string. Format of the LD file
-#'   (\code{"ASCII"} or \code{"BINARY"}).
+#'   (\code{"TEXT"} or \code{"BINARY"}).
 #' @param ld_type Character string specifying the LD representation.
 #'   Typical values include \code{"R"}, \code{"Rinv"}, \code{"sparse_R"},
 #'   or \code{"banded_R"}.
@@ -421,8 +421,8 @@ makeLDlist <- function(fnLD = NULL,
   }
 
   format <- toupper(format)
-  if (!format %in% c("ASCII", "BINARY")) {
-    stop("'format' must be either 'ASCII' or 'BINARY'.")
+  if (!format %in% c("TEXT", "BINARY")) {
+    stop("'format' must be either 'TEXT' or 'BINARY'.")
   }
 
   allowed_types <- c(
@@ -460,7 +460,7 @@ makeLDlist <- function(fnLD = NULL,
 #'
 #' @param x An object of class \code{"LDlist"}.
 #' @param check.file Logical. Check that the LD file exists.
-#' @param check.format Logical. Lightweight structure check (ASCII only).
+#' @param check.format Logical. Lightweight structure check (TEXT only).
 #'
 #' @return Invisibly returns TRUE if validation succeeds.
 #'
@@ -490,7 +490,7 @@ validateLDlist <- function(x,
     stop("Invalid 'kernel_type' for LDlist: ", x$kernel_type)
   }
 
-  if (!x$format %in% c("ASCII", "BINARY")) {
+  if (!x$format %in% c("TEXT", "BINARY")) {
     stop("Invalid 'format' in LDlist: ", x$format)
   }
 
@@ -504,8 +504,8 @@ validateLDlist <- function(x,
     }
   }
 
-  ## ---- lightweight structure check (ASCII only) -----------------------------
-  if (check.format && check.file && x$format == "ASCII") {
+  ## ---- lightweight structure check (TEXT only) -----------------------------
+  if (check.format && check.file && x$format == "TEXT") {
 
     ld_head <- tryCatch(
       utils::read.table(
@@ -522,7 +522,7 @@ validateLDlist <- function(x,
 
     if (ncol(ld_head) < 3) {
       stop(
-        "ASCII LD file must contain at least 3 columns ",
+        "TEXT LD file must contain at least 3 columns ",
         "(row, column, value)."
       )
     }

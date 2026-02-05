@@ -11,7 +11,7 @@ validateGRMlist(x, check.file = TRUE, check.format = TRUE)
 
 \item{check.file}{Logical. Check that the GRM file exists.}
 
-\item{check.format}{Logical. Lightweight structure check (ASCII only).}
+\item{check.format}{Logical. Lightweight structure check (TEXT only).}
 }
 \value{
 Invisibly returns TRUE if validation succeeds.

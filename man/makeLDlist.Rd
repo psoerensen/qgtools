@@ -10,7 +10,7 @@ makeLDlist(fnLD = NULL, format = "BINARY", ld_type = "R", snp_index = NULL)
 \item{fnLD}{Character string. File name of the LD matrix (or its inverse).}
 
 \item{format}{Character string. Format of the LD file
-(\code{"ASCII"} or \code{"BINARY"}).}
+(\code{"TEXT"} or \code{"BINARY"}).}
 
 \item{ld_type}{Character string specifying the LD representation.
 Typical values include \code{"R"}, \code{"Rinv"}, \code{"sparse_R"},

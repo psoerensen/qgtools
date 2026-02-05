@@ -11,7 +11,7 @@ validatePEDlist(x, check.file = TRUE, check.format = TRUE, check.logic = FALSE)
 
 \item{check.file}{Logical. Check that the pedigree file exists.}
 
-\item{check.format}{Logical. Lightweight structure check (ASCII only).}
+\item{check.format}{Logical. Lightweight structure check (TEXT only).}
 
 \item{check.logic}{Logical. Optional deep pedigree logic checks (default FALSE).}
 }

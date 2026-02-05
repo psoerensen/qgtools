@@ -12,7 +12,7 @@ makeGRMlist(fnGRM = NULL, format = "BINARY", grm_type = "G")
 \item{fnGRM}{Character string. File name of the GRM (or its inverse).}
 
 \item{format}{Character string. Format of the GRM file
-(\code{"ASCII"} or \code{"BINARY"}).}
+(\code{"TEXT"} or \code{"BINARY"}).}
 
 \item{grm_type}{Character string specifying the GRM representation.
 Typical values include \code{"G"}, \code{"Ginv"}, or \code{"scaled_G"}.}

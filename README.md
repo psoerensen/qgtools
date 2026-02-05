@@ -56,10 +56,10 @@ data <- makeDatalist(
 )
 
 ## Prepare pedigree kernel for additive genetic effects
-PED <- makePEDlist(fnPED = "pedigree.txt", format = "ASCII", method = "S-D-NonInbred")
+PED <- makePEDlist(fnPED = "pedigree.txt", format = "TEXT", method = "S-D-NonInbred")
 
 ## Prepare genomic relationship kernel for additive genomic effects
-GRM <- makeGRMlist(fnPED = "pedigree.txt", format = "BINARY", grm_type = "G-inverse")
+GRM <- makeGRMlist(fnGRM = "grm_inverse.txt", format = "BINARY", grm_type = "G-inverse")
 
 # Marker-level genotype container (e.g. PLINK BED/BIM/FAM)
 # This provides information about where genotype data live on disk and how animals map to markers.
