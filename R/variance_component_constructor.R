@@ -6,30 +6,42 @@
 #'   \item corresponds to a random effect in the model formulas,
 #'   \item is indexed by a grouping factor (\code{index}),
 #'   \item uses a kernel to induce covariance across index levels, and
-#'   \item may optionally specify a prior on variance or covariance parameters.
+#'   \item may optionally specify starting values and/or prior distributions
+#'         for variance or covariance parameters.
 #' }
 #'
 #' Covariance may be induced explicitly (e.g. via pedigree or GRM-based kernels
-#' with variance–covariance priors) or implicitly through model structure, such
-#' as marker-based effects where covariance arises from genotypes, LD, and
+#' with variance–covariance parameters) or implicitly through model structure,
+#' such as marker-based effects where covariance arises from genotypes, LD, and
 #' marker-level priors.
 #'
 #' The \code{index} must match the grouping factor used for the corresponding
-#' random effect in the model formulas.
+#' random effect in the model formula.
+#' The \code{index} is the name of the grouping variable and must correspond
+#' exactly to the \code{(1 | index)} term in the model formula.
 #'
 #' @details
-#' The interpretation of variance and covariance parameters depends on the
-#' analysis context and the combination of kernel and prior used. Some variance
-#' components imply explicit variance–covariance matrices, while others induce
-#' covariance implicitly without forming such matrices.
+#' The interpretation of supplied variance and covariance information depends on
+#' the analysis task:
+#' \itemize{
+#'   \item \strong{REML}: \code{start} values are used as starting values.
+#'   \item \strong{Bayesian}: \code{prior} specifies prior distributions.
+#'   \item \strong{Solve}: \code{start} values are treated as fixed parameters.
+#' }
+#'
+#' Not all kernels imply explicit variance–covariance matrices. For example,
+#' marker-based kernels may induce covariance implicitly without forming such
+#' matrices.
 #'
 #' @param index Character. Grouping variable indexing the random effect.
 #' @param traits Character vector of trait names.
 #' @param kernel Kernel object defining covariance across index levels.
 #' @param structure Character. Declared trait covariance structure
-#'   ("unstructured", "diagonal", or "identity"). This parameter is currently
+#'   ("unstructured", "diagonal", or "identity"). This parameter is primarily
 #'   informational and may be used for validation or default prior construction
 #'   in future versions.
+#' @param start Optional numeric scalar, vector, or matrix specifying starting
+#'   values (or fixed values) for variance or covariance parameters.
 #' @param prior Optional prior specification object.
 #'
 #' @return An object of class \code{"vc"}.
@@ -38,6 +50,7 @@ vc <- function(index,
                traits,
                kernel = NULL,
                structure = "unstructured",
+               start = NULL,
                prior = NULL) {
 
   ## ---- index ---------------------------------------------------------------
@@ -63,6 +76,12 @@ vc <- function(index,
     kernel <- as_kernel(kernel)
   }
 
+  ## ---- start ---------------------------------------------------------------
+  if (!is.null(start) &&
+      !(is.numeric(start) || is.matrix(start))) {
+    stop("'start' must be numeric (scalar, vector, or matrix) or NULL")
+  }
+
   ## ---- prior ---------------------------------------------------------------
   if (!is.null(prior) && !inherits(prior, "prior"))
     stop("'prior' must be a prior object")
@@ -74,11 +93,13 @@ vc <- function(index,
       traits    = traits,
       kernel    = kernel,
       structure = structure,
+      start     = start,
       prior     = prior
     ),
     class = "vc"
   )
 }
+
 
 
 

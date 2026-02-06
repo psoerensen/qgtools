@@ -56,7 +56,7 @@ data <- makeDatalist(
 )
 
 ## Prepare pedigree kernel for additive genetic effects
-PED <- makePEDlist(fnPED = "pedigree.txt", format = "TEXT", method = "S-D-NonInbred")
+PED <- makePEDlist(fnPED = "pedigree.txt", method = "S-D-NonInbred")
 
 ## Prepare genomic relationship kernel for additive genomic effects
 GRM <- makeGRMlist(fnGRM = "grm_inverse.txt", format = "BINARY", grm_type = "G-inverse")
@@ -184,10 +184,9 @@ definition and numerical implementation.
 For deployment, qgtools can be packaged into **containerized
 environments** (e.g. Docker or Singularity), allowing models to be
 executed reproducibly on high-performance computing platforms and cloud
-infrastructures such as **AWS** and **Azure**. Containers encapsulate
-the required libraries and runtimes and can be deployed to batch
-systems, Kubernetes clusters, or managed cloud services without exposing
-source code.
+infrastructures such as **AWS** and **Azure**. Containers bundle the
+required libraries and runtimes and can be deployed on HPC batch systems
+or cloud services without exposing source code.
 
 This design enables qgtools to act as a unifying modeling layer while
 supporting multiple computational backends and deployment scenarios,
