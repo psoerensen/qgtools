@@ -1,0 +1,28 @@
+---
+title: "human"
+output: html_document
+---
+
+# Human example (PLINK-based)
+
+This example demonstrates how qgtools can work with standard PLINK
+binary genotype files together with phenotype and covariate data.
+
+## Files
+
+- `human.bed`, `human.bim`, `human.fam`
+  - PLINK binary genotype files
+
+- `human.pheno`
+  - Phenotype file
+
+- `human.covar`
+  - Covariate file
+
+## Intended usage
+
+This example mirrors a typical GWAS workflow where:
+- genotypes are stored in PLINK format
+- phenotypes and covariates are provided separately
+
+The files are simulated and kept small for illustration purposes.

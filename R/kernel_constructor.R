@@ -841,3 +841,5 @@ validate_kernel <- function(obj, kernel_id = "<kernel>") {
 
   issues
 }
+
+

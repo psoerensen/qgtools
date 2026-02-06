@@ -1,0 +1,32 @@
+---
+title: "mouse"
+output: html_document
+---
+
+# Mouse example (CSV-based)
+
+This example demonstrates how qgtools can integrate phenotype data,
+pedigree information, and marker data stored in plain text files.
+
+## Files
+
+- `mouse.csv`
+  - Phenotypes and covariates
+  - Columns include: `id`, traits, and fixed effects
+
+- `pedigree.csv`
+  - Pedigree information
+  - Columns: `id`, `sire`, `dam`, `date_of_birth`
+
+- `genotypes.csv`
+  - Marker genotypes
+  - First column `id`, remaining columns are markers (`M1`, `M2`, ...)
+
+## Intended usage
+
+This example is suitable for:
+- additive genetic models using pedigree kernels
+- marker-based models using disk-backed genotype data
+- demonstration and testing purposes
+
+All files are intentionally small and human-readable.
