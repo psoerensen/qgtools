@@ -6,7 +6,7 @@
 #' @param kernel_spec KernelSpec list (from as_list.kernels)
 #'
 #' @export
-validate_bundle <- function(data_spec, model_spec, varcomp_spec, kernel_spec) {
+validate_bundle_reml <- function(data_spec, model_spec, varcomp_spec, kernel_spec) {
 
   ## ---- basic structure checks -------------------------------------------
   stopifnot(

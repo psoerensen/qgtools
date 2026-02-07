@@ -70,10 +70,10 @@ Glist <- makeGlist(
 )
 ```
 
-#### Single and multiple traits examples
+#### Single and multiple traits examples (REML/solvers)
 
 ``` r
-## Single-trait linear mixed model 
+## Single-trait linear mixed model (REML)
 
 ## Model formula:
 ## (1 | id) represents the additive genetic (animal) effect
@@ -81,64 +81,155 @@ formulas <- list(
   BW = BW ~ sex + reps + (1 | dam) + (1 | id)
 )
 
-## Variance components define how covariance is modeled
+## Variance components define covariance structure
 vcs <- list(
-  dam_env = vc(index = "dam", traits = "BW"),          # dam environmental effect
-  animal_genetic = vc(index = "id", traits = "BW",
-                       kernel = PED),                  # additive genetic effect
-  residual = vc(index = "Residual", traits = "BW")    # residual variance
+  dam_env = vc(
+    index  = "dam",
+    traits = "BW"
+  ),
+
+  animal_genetic = vc(
+    index  = "id",
+    traits = "BW",
+    kernel = PED
+  ),
+
+  residual = vc(
+    index  = "Residual",
+    traits = "BW"
+  )
 )
 
-## Fit the model and estimate variance component using REML
+## Fit the model using REML
 fit <- gfit(formulas, data, vcs, task = "reml")
 
-## Multi-trait linear mixed model 
+## Multi-trait linear mixed model (REML)
 
-## Same model structure, now for two correlated traits
 formulas_mt <- list(
   Gl = Gl ~ sex + reps + (1 | dam) + (1 | id),
   BW = BW ~ sex + reps + (1 | dam) + (1 | id)
 )
 
 ## Shared variance components induce correlation between traits
-## Shared variance components induce correlation between traits
 ## For REML, supplied values are used as starting values
 vcs_mt <- list(
   dam_env = vc(
     index  = "dam",
     traits = c("Gl", "BW"),
-    prior  = prior_start(
-      matrix(
-        c(1.0, 0.02,
-          0.2, 2.0),
-        nrow = 2,
-        byrow = TRUE
-      )
+    start  = matrix(
+      c(1.0, 0.2,
+        0.2, 2.0),
+      nrow = 2,
+      byrow = TRUE
+    )
   ),
 
   animal_genetic = vc(
     index  = "id",
     traits = c("Gl", "BW"),
     kernel = PED,
-    prior  = prior_start(
-      matrix(
-        c(4.0, 0.8,
-          0.8, 3.0),
-        nrow = 2,
-        byrow = TRUE
-      )
+    start  = matrix(
+      c(4.0, 0.8,
+        0.8, 3.0),
+      nrow = 2,
+      byrow = TRUE
     )
   ),
 
   residual = vc(
     index  = "Residual",
     traits = c("Gl", "BW"),
-    prior  = prior_diag(c(5, 5))
+    start  = diag(c(5, 5))
   )
 )
 
-## Fit the model and estimate variance component using REML
+## REML estimation
 fit_mt <- gfit(formulas_mt, data, vcs_mt, task = "reml")
+
+## Solve mixed model equations (no variance updates)
+fit_mt <- gfit(formulas_mt, data, vcs_mt, task = "solver")
+```
+
+#### Single and multiple traits examples Bayesian hirarchical models
+
+``` r
+## Single-trait Bayesian linear mixed model
+
+formulas <- list(
+  BW = BW ~ sex + reps + (1 | dam) + (1 | id)
+)
+
+# Specify prior distrubutions for selected factors
+priors <- list(
+  dam_env = prior(
+    index = "dam",
+    traits = "BW",
+    distribution = iw(df = 4, S = 1),
+    start = 1
+  ),
+
+  animal_genetic = prior(
+    index = "id",
+    traits = "BW",
+    kernel = PED,
+    distribution = iw(df = 4, S = 1),
+    start = 1
+  ),
+
+  residual = prior(
+    index = "Residual",
+    traits = "BW",
+    distribution = iw(df = 4, S = 1),
+    start = 1
+  )
+)
+
+# Estimate parameters using sampling based methods such Gibbs
+fit <- gfit(formulas, data, priors, task = "bayes")
+
+
+## Multi-trait Bayesian linear mixed model
+
+formulas_mt <- list(
+  Gl = Gl ~ sex + reps + (1 | dam) + (1 | id),
+  BW = BW ~ sex + reps + (1 | dam) + (1 | id)
+)
+
+priors_mt <- list(
+  dam_env = prior(
+    index  = "dam",
+    traits = c("Gl", "BW"),
+    distribution = iw(df = 4, S = diag(2)),
+    start  = matrix(
+      c(1.0, 0.2,
+        0.2, 2.0),
+      nrow = 2,
+      byrow = TRUE
+    )
+  ),
+
+  animal_genetic = prior(
+    index  = "id",
+    traits = c("Gl", "BW"),
+    kernel = PED,
+    distribution = iw(df = 4, S = diag(2)),
+    start  = matrix(
+      c(4.0, 0.8,
+        0.8, 3.0),
+      nrow = 2,
+      byrow = TRUE
+    )
+  ),
+
+  residual = prior(
+    index  = "Residual",
+    traits = c("Gl", "BW"),
+    distribution = iw(df = 4, S = diag(2)),
+    start  = diag(c(5, 5))
+  )
+)
+
+fit_mt <- gfit(formulas_mt, data, priors_mt, task = "bayes")
 ```
 
 #### Example R vs Python interface

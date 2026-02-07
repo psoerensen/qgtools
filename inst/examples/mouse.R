@@ -47,12 +47,45 @@ model_spec   <- as_list.model(formulas, task)
 kernel_spec  <- as_list.kernels(vcs)
 varcomp_spec <- as_list.vcs(vcs)
 
-validate_bundle(
+validate_bundle_reml(
   data_spec    = data_spec,
   model_spec   = model_spec,
   varcomp_spec     = varcomp_spec,
   kernel_spec = kernel_spec
 )
+
+# Variance specification in the tradional linear mixed model
+vcs <- list(
+  animal = vc(
+    index     = "id",
+    traits    = c("BW", "Gl"),
+    kernel    = PED,
+    structure = "unstructured"
+  ),
+  residual = vc(
+    index  = "Residual",
+    traits = c("BW", "Gl"),
+    kernel = iid_kernel()
+  )
+)
+
+# Variance specification in the Bayesian linear mixed model
+priors <- list(
+  animal = prior(
+    index = "id",
+    traits = c("BW", "Gl"),
+    kernel    = PED,
+    distribution = iw(df = 4, S = diag(2)),
+    start = diag(2)
+  ),
+  residual = prior(
+    index = "Residual",
+    traits = c("BW", "Gl"),
+    distribution = iw(df = 4, S = diag(2)),
+    start = diag(2)
+  )
+)
+
 
 str(varcomp_spec)
 str(kernel_spec)
