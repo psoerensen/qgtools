@@ -46,11 +46,14 @@ C++/Fortran libraries. This design ensures consistent results across
 interfaces and enables flexible deployment in cloud and HPC
 environments.
 
-## Annotated example: mMltivariate mixed / Bayesian genomic model
+## Annotated example: Multivariate mixed / Bayesian genomic model
 
-This example illustrates how qgtools separates: - model structure
-(formulas), - covariance definitions (kernels), - variance components or
-priors, - and estimation task.
+This example illustrates how qgtools separates:
+
+- model structure (formulas),
+- covariance definitions (kernels),
+- variance components or priors,
+- and estimation task.
 
 ``` r
 ## ------------------------------------------------------------------
@@ -115,6 +118,10 @@ priors <- list(
 fit <- gfit(formulas, data, priors, task = "bayes")
 ```
 
+The same model structure can be estimated either as a classical mixed
+model (REML / solver) or as a Bayesian hierarchical model by changing
+only the variance specification and the estimation task.
+
 ## Kernel objects are lightweight descriptors
 
 Kernel objects in **qgtools** are designed as *lightweight descriptors*
@@ -138,6 +145,10 @@ datasets—without modification.
 By deferring covariance construction to backend-specific
 implementations, qgtools achieves both flexibility and scalability while
 preserving a clear and consistent statistical interface.
+
+- **Variance components vs priors** Classical mixed models use variance
+  components (`vc()`), while Bayesian models replace these with explicit
+  prior distributions (`prior()`), without changing formulas or kernels.
 
 #### Prepare input data
 
@@ -251,7 +262,7 @@ formulas <- list(
   BW = BW ~ sex + reps + (1 | dam) + (1 | id)
 )
 
-# Specify prior distrubutions for selected factors
+# Specify prior distributions for selected factors
 priors <- list(
   dam_env = prior(
     index = "dam",
@@ -340,6 +351,11 @@ kernel (e.g. `Glist`).
 This mirrors how marker effects are handled in software such as BGLR and
 BayesR, while preserving a clean separation between model structure and
 inference.
+
+Unlike classical random effects, marker effects are not listed
+explicitly in the model formulas, because their dimensionality is too
+large and their covariance is induced implicitly through genotype
+structure and priors.
 
 ``` r
 ## Single-trait Bayesian linear regression with marker-level priors
@@ -464,10 +480,10 @@ The residual variance is represented by a component with
 `index = "Residual"`.
 
 - It is **implicit** in model formulas and must **not** appear as
-  `(1 | Residual)`.
+  `(1 | Residual)`
 - It must be explicitly specified using `vc()` (REML / solver) or
-  `prior()` (Bayesian).
-- Residual components never require a kernel.
+  `prior()` (Bayesian)
+- Residual components never require a kernel
 
 ## Performance and deployment
 
