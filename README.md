@@ -61,8 +61,7 @@ PED <- makePEDlist(fnPED = "pedigree.txt", method = "S-D-NonInbred")
 ## Prepare genomic relationship kernel for additive genomic effects
 GRM <- makeGRMlist(fnGRM = "grm_inverse.txt", format = "BINARY", grm_type = "G-inverse")
 
-# Marker-level genotype container (e.g. PLINK BED/BIM/FAM)
-# This provides information about where genotype data live on disk and how animals map to markers.
+# Marker-level genotype container (e.g. PLINK BED/BIM/FAM). This provides information about where genotype data live on disk and how animals map to markers.
 Glist <- makeGlist(
   bedfiles = "chr.bed",
   bimfiles = "chr.bim",
@@ -70,7 +69,7 @@ Glist <- makeGlist(
 )
 ```
 
-#### Single and multiple traits examples (REML/solvers)
+#### Linear mixed models: REML and solver-based estimation
 
 ``` r
 ## Single-trait linear mixed model (REML)
@@ -147,10 +146,10 @@ vcs_mt <- list(
 fit_mt <- gfit(formulas_mt, data, vcs_mt, task = "reml")
 
 ## Solve mixed model equations (no variance updates)
-fit_mt <- gfit(formulas_mt, data, vcs_mt, task = "solver")
+fit_mt <- gfit(formulas_mt, data, vcs_mt, task = "solve")
 ```
 
-#### Single and multiple traits examples Bayesian hirarchical models
+#### Bayesian hierarchical linear mixed models
 
 ``` r
 ## Single-trait Bayesian linear mixed model
