@@ -261,7 +261,7 @@ priors <- list(
     kernel = Glist,        # genotype / marker kernel
     distribution = bayesC(
       pi         = c(0.95, 0.05),
-      gamma      = c(0, 1),
+      variances  = c(0, 1),
       sets       = sets,
       weights    = weights,
       annotation = annotation

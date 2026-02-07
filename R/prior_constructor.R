@@ -1,33 +1,134 @@
+#' Prior specification for Bayesian hierarchical models
+#'
+#' Define a prior for a model component in a Bayesian linear or mixed model.
+#' The structure mirrors \code{vc()}, but replaces variance estimation with
+#' explicit prior distributions.
+#'
+#' Each prior:
+#' \itemize{
+#'   \item corresponds to a latent model component,
+#'   \item is indexed by a grouping factor (\code{index}),
+#'   \item optionally uses a kernel to induce covariance across index levels,
+#'   \item specifies a prior distribution for variance, covariance, or effects,
+#'   \item may include starting values for MCMC initialization.
+#' }
+#'
+#' The \code{index} must correspond either to:
+#' \itemize{
+#'   \item a grouping factor in the model formula (e.g. \code{(1 | id)}), or
+#'   \item a latent index (e.g. \code{"marker"} or \code{"Residual"}).
+#' }
+#'
+#' @details
+#' In Bayesian models:
+#' \itemize{
+#'   \item \code{kernel} defines covariance across rows/levels,
+#'   \item \code{structure} defines covariance across traits,
+#'   \item \code{distribution} defines the prior on model parameters.
+#' }
+#'
+#' Marker-based priors (e.g. BayesC, BayesR) typically operate on effect sizes
+#' rather than explicit variance–covariance matrices. In these cases,
+#' covariance is induced implicitly via the kernel and marker design.
+#'
+#' @param index Character. Grouping variable or latent index.
+#' @param traits Character vector of trait names.
+#' @param kernel Optional kernel object defining covariance across index levels.
+#' @param structure Character. Trait covariance structure
+#'   ("unstructured", "diagonal", or "identity").
+#' @param distribution Prior distribution object (e.g. \code{iw()}, \code{bayesC()}).
+#' @param start Optional numeric scalar, vector, or matrix used as MCMC starting values.
+#'
+#' @return An object of class \code{"prior"}.
+#' @export
+prior <- function(index,
+                  traits,
+                  kernel = NULL,
+                  structure = "unstructured",
+                  distribution,
+                  start = NULL) {
+
+  ## ---- index -------------------------------------------------------------
+  if (!is.character(index) || length(index) != 1)
+    stop("'index' must be a single character string")
+
+  ## ---- traits ------------------------------------------------------------
+  if (!is.character(traits) || length(traits) < 1)
+    stop("'traits' must be a non-empty character vector")
+
+  ## ---- structure ---------------------------------------------------------
+  allowed_structures <- c("unstructured", "diagonal", "identity")
+  if (!structure %in% allowed_structures)
+    stop(
+      "'structure' must be one of: ",
+      paste(allowed_structures, collapse = ", ")
+    )
+
+  ## ---- kernel ------------------------------------------------------------
+  if (!is.null(kernel)) {
+    kernel <- as_kernel(kernel)
+  }
+
+  ## ---- distribution ------------------------------------------------------
+  if (missing(distribution))
+    stop("A prior 'distribution' must be supplied")
+
+  if (!inherits(distribution, "prior_distribution"))
+    stop("'distribution' must be a prior distribution object")
+
+  ## ---- start -------------------------------------------------------------
+  if (!is.null(start) &&
+      !(is.numeric(start) || is.matrix(start))) {
+    stop("'start' must be numeric (scalar, vector, or matrix) or NULL")
+  }
+
+  ## ---- build object ------------------------------------------------------
+  structure(
+    list(
+      index        = index,
+      traits       = traits,
+      kernel       = kernel,
+      structure    = structure,
+      distribution = distribution,
+      start        = start
+    ),
+    class = "prior"
+  )
+}
+
 
 # ------------------------------------------------------------------------------
 # Prior constructors
 # ------------------------------------------------------------------------------
 
-# ------------------------------------------------------------------------------
-# Internal prior constructor
-# ------------------------------------------------------------------------------
-
-new_prior <- function(type, ...) {
+#' Base class for prior distributions
+#'
+#' @export
+new_prior_distribution <- function(type, params) {
 
   if (!is.character(type) || length(type) != 1)
     stop("'type' must be a single character string")
 
-  obj <- list(
-    type   = type,
-    params = list(...)
-  )
+  if (!is.list(params))
+    stop("'params' must be a list")
 
-  class(obj) <- c(paste0(type, "_prior"), "prior")
-  obj
+  structure(
+    list(
+      type   = type,
+      params = params
+    ),
+    class = c(type, "prior_distribution")
+  )
 }
 
-
-#' Inverse-Wishart prior for trait covariance
+#' Inverse-Wishart prior
 #'
-#' @param df Degrees of freedom.
-#' @param S Scale matrix.
+#' @param df Degrees of freedom
+#' @param S Scale matrix
+#'
+#' @return An object of class "iw"
 #' @export
-prior_iw <- function(df, S) {
+iw <- function(df, S) {
 
   if (!is.numeric(df) || length(df) != 1 || df <= 0)
     stop("'df' must be a positive scalar")
@@ -38,192 +139,82 @@ prior_iw <- function(df, S) {
   if (nrow(S) != ncol(S))
     stop("'S' must be a square matrix")
 
-  if (!isTRUE(all.equal(S, t(S))))
-    stop("'S' must be symmetric")
-
-  if (any(diag(S) <= 0))
-    stop("Diagonal elements of 'S' must be positive")
-
-  new_prior(
-    type = "inverse_wishart",
-    df = df,
-    S  = S
+  new_prior_distribution(
+    type = "iw",
+    params = list(
+      df = df,
+      S  = unclass(S)
+    )
   )
 }
 
-
-#' Diagonal covariance prior
+#' BayesC prior for marker effects
 #'
-#' @param var Numeric vector of variances.
-#' @export
-prior_diag <- function(var) {
-
-  if (!is.numeric(var) || is.matrix(var))
-    stop("'var' must be a numeric vector")
-
-  if (any(var <= 0))
-    stop("All variances must be positive")
-
-  new_prior(
-    type = "diagonal",
-    var = as.numeric(var)
-  )
-}
-
-
-#' Fixed covariance prior
+#' @param pi Mixing proportions (e.g. c(0.95, 0.05))
+#' @param gamma Variance scaling parameters
+#' @param sets Optional marker sets
+#' @param weights Optional marker weights
+#' @param annotation Optional functional annotation
 #'
-#' @param Sigma Fixed covariance matrix.
+#' @return An object of class "bayesC"
 #' @export
-prior_fixed <- function(Sigma) {
+bayesC <- function(pi,
+                   gamma,
+                   sets = NULL,
+                   weights = NULL,
+                   annotation = NULL) {
 
-  if (!is.matrix(Sigma))
-    stop("'Sigma' must be a matrix")
-
-  if (nrow(Sigma) != ncol(Sigma))
-    stop("'Sigma' must be a square matrix")
-
-  if (!isTRUE(all.equal(Sigma, t(Sigma))))
-    stop("'Sigma' must be symmetric")
-
-  new_prior(
-    type = "fixed",
-    Sigma = Sigma
-  )
-}
-
-
-# ------------------------------------------------------------------------------
-# BayesC prior (spike-and-slab, explicit zero component)
-# ------------------------------------------------------------------------------
-
-prior_bayesC <- function(pi,
-                         var,
-                         estimate_pi = FALSE) {
-
-  if (!is.numeric(pi) || any(pi < 0))
-    stop("'pi' must be a non-negative numeric vector")
-
-  if (abs(sum(pi) - 1) > 1e-8)
+  if (!is.numeric(pi) || abs(sum(pi) - 1) > 1e-8)
     stop("'pi' must sum to 1")
 
-  if (!is.numeric(var))
-    stop("'var' must be numeric")
+  if (!is.numeric(gamma))
+    stop("'gamma' must be numeric")
 
-  if (length(pi) != length(var))
-    stop("'pi' and 'var' must have the same length")
-
-  if (length(var) != 2)
-    stop("BayesC requires exactly two mixture components: spike (0) and slab")
-
-  if (sum(var == 0) != 1)
-    stop("BayesC requires exactly one zero-variance component")
-
-  if (any(var < 0))
-    stop("'var' must be non-negative")
-
-  new_prior(
+  new_prior_distribution(
     type = "bayesC",
-    pi = pi,
-    var = var,
-    estimate_pi = estimate_pi
+    params = list(
+      pi         = pi,
+      gamma      = gamma,
+      sets       = sets,
+      weights    = weights,
+      annotation = annotation
+    )
   )
 }
 
+#' BayesR prior for marker effects
+#'
+#' @param pi Mixing proportions
+#' @param variances Vector of component variances
+#' @param sets Optional marker sets
+#' @param weights Optional marker weights
+#' @param annotation Optional functional annotation
+#'
+#' @return An object of class "bayesR"
+#' @export
+bayesR <- function(pi,
+                   variances,
+                   sets = NULL,
+                   weights = NULL,
+                   annotation = NULL) {
 
-# ------------------------------------------------------------------------------
-# BayesR prior (mixture of normals, explicit zero component)
-# ------------------------------------------------------------------------------
-
-prior_bayesR <- function(pi,
-                         var,
-                         estimate_pi = FALSE) {
-
-  if (!is.numeric(pi) || any(pi < 0))
-    stop("'pi' must be a non-negative numeric vector")
-
-  if (abs(sum(pi) - 1) > 1e-8)
+  if (!is.numeric(pi) || abs(sum(pi) - 1) > 1e-8)
     stop("'pi' must sum to 1")
 
-  if (!is.numeric(var))
-    stop("'var' must be numeric")
+  if (!is.numeric(variances))
+    stop("'variances' must be numeric")
 
-  if (length(pi) != length(var))
-    stop("'pi' and 'var' must have the same length")
+  if (length(pi) != length(variances))
+    stop("'pi' and 'variances' must have same length")
 
-  if (sum(var == 0) != 1)
-    stop("Exactly one element of 'var' must be 0 (spike at zero)")
-
-  if (any(var < 0))
-    stop("'var' must be non-negative")
-
-  new_prior(
+  new_prior_distribution(
     type = "bayesR",
-    pi = pi,
-    var = var,
-    estimate_pi = estimate_pi
+    params = list(
+      pi         = pi,
+      variances  = variances,
+      sets       = sets,
+      weights    = weights,
+      annotation = annotation
+    )
   )
 }
-
-
-# ------------------------------------------------------------------------------
-# Generic prior print method
-# ------------------------------------------------------------------------------
-
-#' @export
-print.prior <- function(x, ...) {
-  cat("Prior specification\n")
-  cat("  Type:", x$type, "\n")
-  invisible(x)
-}
-
-
-.print_mixture_prior <- function(x, model_name) {
-
-  pi  <- x$params$pi
-  var <- x$params$var
-
-  spike <- which(var == 0)
-
-  cat(model_name, "prior\n", sep = "")
-  cat("  Mixture components:", length(var), "\n")
-
-  for (k in seq_along(var)) {
-    if (k == spike) {
-      cat(sprintf(
-        "   [%d] spike at 0      : pi = %.3f\n",
-        k, pi[k]
-      ))
-    } else {
-      cat(sprintf(
-        "   [%d] N(0, %.4g) : pi = %.3f\n",
-        k, var[k], pi[k]
-      ))
-    }
-  }
-
-  if (isTRUE(x$params$estimate_pi)) {
-    cat("  Mixing proportions: estimated (pi-hyperprior)\n")
-  } else {
-    cat("  Mixing proportions: fixed\n")
-  }
-
-  invisible(x)
-}
-
-# ------------------------------------------------------------------------------
-# Print BayesC prior
-# ------------------------------------------------------------------------------
-#' @export
-print.bayesC <- function(x, ...) {
-  .print_mixture_prior(x, model_name = "BayesC")
-}
-
-# ------------------------------------------------------------------------------
-# Print BayesR prior
-# ------------------------------------------------------------------------------
-#' @export
-print.bayesR <- function(x, ...) {
-  .print_mixture_prior(x, model_name = "BayesR")
-}
-
