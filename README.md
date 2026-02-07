@@ -34,6 +34,31 @@ framework.
   Data are treated as a data source, allowing both in-memory and
   disk-backed datasets to be used transparently.
 
+## Orthogonal layers
+
+qgtools separates model specification into four orthogonal layers:
+
+1.  **Formulas**  
+    Describe *what* effects enter the model (responses, fixed effects,
+    random-effect indices).
+
+2.  **Kernels**  
+    Describe *how* covariance is induced across levels of a random
+    effect (e.g. pedigree, genomic relationships, marker structure).
+
+3.  **Variance components or priors**  
+    Describe *how much* variation is attributed to each component:
+
+    - variance components (`vc()`) for REML / solver-based estimation
+    - prior distributions (`prior()`) for Bayesian inference
+
+4.  **Task**  
+    Determines *how* parameters are estimated (`"reml"`, `"solve"`,
+    `"bayes"`), without changing the model structure.
+
+These layers are specified independently but validated jointly before
+fitting.
+
 ## R and Python interfaces
 
 qgtools is designed with a language-agnostic core, allowing both **R and
@@ -46,14 +71,27 @@ C++/Fortran libraries. This design ensures consistent results across
 interfaces and enables flexible deployment in cloud and HPC
 environments.
 
-## Annotated example: Multivariate mixed / Bayesian genomic model
+## Simple example: Multivariate mixed / Bayesian genomic model
 
+``` r
 This example illustrates how qgtools separates:
 
-- model structure (formulas),
-- covariance definitions (kernels),
-- variance components or priors,
-- and estimation task.
+formulas <- list(
+  BW = BW ~ sex + (1 | id)
+)
+
+vcs <- list(
+  animal = vc(index = "id", traits = "BW", kernel = PED),
+  residual = vc(index = "Residual", traits = "BW")
+)
+
+fit <- gfit(formulas, data, vcs, task = "reml")
+```
+
+This same model can be refit as Bayesian by replacing *vc()* with
+*prior()* and changing task.
+
+## Annotated example: Multivariate mixed / Bayesian genomic model
 
 ``` r
 ## ------------------------------------------------------------------
@@ -438,31 +476,6 @@ consistency.
 Model specifications can also be exported as structured JSON, allowing
 the same model to be executed by external backends, workflow engines, or
 non-R/Python environments.
-
-## Orthogonal layers
-
-qgtools separates model specification into four orthogonal layers:
-
-1.  **Formulas**  
-    Describe *what* effects enter the model (responses, fixed effects,
-    random-effect indices).
-
-2.  **Kernels**  
-    Describe *how* covariance is induced across levels of a random
-    effect (e.g. pedigree, genomic relationships, marker structure).
-
-3.  **Variance components or priors**  
-    Describe *how much* variation is attributed to each component:
-
-    - variance components (`vc()`) for REML / solver-based estimation
-    - prior distributions (`prior()`) for Bayesian inference
-
-4.  **Task**  
-    Determines *how* parameters are estimated (`"reml"`, `"solve"`,
-    `"bayes"`), without changing the model structure.
-
-These layers are specified independently but validated jointly before
-fitting.
 
 > **Important**
 >
