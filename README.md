@@ -229,8 +229,11 @@ priors_mt <- list(
 )
 
 fit_mt <- gfit(formulas_mt, data, priors_mt, task = "bayes")
+```
 
+#### Bayesian multi-component linear models with marker-level priors
 
+``` r
 ## Single-trait Bayesian linear regression with marker-level priors
 
 formulas <- list(
