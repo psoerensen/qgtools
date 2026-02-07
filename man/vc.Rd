@@ -54,7 +54,8 @@ The \code{index} must match the grouping factor used for the corresponding
 random effect in the model formula.
 The \code{index} is the name of the grouping variable and must correspond
 exactly to the \code{(1 | index)} term in the model formula.
-
+}
+\section{NOTE:}{
 The interpretation of supplied variance and covariance information depends on
 the analysis task:
 \itemize{
@@ -67,3 +68,4 @@ Not all kernels imply explicit variance–covariance matrices. For example,
 marker-based kernels may induce covariance implicitly without forming such
 matrices.
 }
+

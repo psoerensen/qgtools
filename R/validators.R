@@ -1,3 +1,108 @@
+#' Validate consistency of a model specification bundle
+#'
+#' @param data_spec DataSpec list (from as_list.Datalist)
+#' @param model_spec ModelSpec list (from as_list.model)
+#' @param varcomp_spec VarCompSpec list (from as_list.vcs)
+#' @param kernel_spec KernelSpec list (from as_list.kernels)
+#'
+#' @export
+validate_bundle <- function(data_spec, model_spec, varcomp_spec, kernel_spec) {
+
+  ## ---- basic structure checks -------------------------------------------
+  stopifnot(
+    is.list(data_spec),    identical(data_spec$type,    "DataSpec"),
+    is.list(model_spec),   identical(model_spec$type,   "ModelSpec"),
+    is.list(varcomp_spec), identical(varcomp_spec$type, "VarCompSpec"),
+    is.list(kernel_spec),  identical(kernel_spec$type,  "KernelSpec")
+  )
+
+  ## ---- 1. kernel references ---------------------------------------------
+  defined_kernels <- names(kernel_spec$kernels)
+
+  referenced_kernels <- unique(vapply(
+    varcomp_spec$components,
+    function(x) x$kernel,
+    character(1)
+  ))
+
+  missing_kernels <- setdiff(referenced_kernels, defined_kernels)
+
+  if (length(missing_kernels) > 0) {
+    stop(
+      "VarCompSpec references undefined kernels: ",
+      paste(missing_kernels, collapse = ", ")
+    )
+  }
+
+  ## ---- 2. random-effect indices vs vc definitions -----------------------
+  vc_indices <- vapply(
+    varcomp_spec$components,
+    function(x) x$index,
+    character(1)
+  )
+
+  model_indices <- unique(unlist(lapply(
+    model_spec$summary$random,
+    function(tr) {
+      if (length(tr) == 0) return(character(0))
+      vapply(tr, `[[`, character(1), "index")
+    }
+  )))
+
+  missing_vc <- setdiff(model_indices, vc_indices)
+  if (length(missing_vc) > 0) {
+    stop(
+      "Random effects in model but missing vc() definitions: ",
+      paste(missing_vc, collapse = ", ")
+    )
+  }
+
+  # unused_vc <- setdiff(vc_indices, model_indices)
+  # if (length(unused_vc) > 0) {
+  #   warning(
+  #     "vc() definitions not used in model formulas: ",
+  #     paste(unused_vc, collapse = ", ")
+  #   )
+  # }
+  ## ---- residual VC is implicit ------------------------------------------
+  residual_names <- c("Residual", "residual", "epsilon", "error")
+
+  unused_vc <- setdiff(vc_indices, model_indices)
+  unused_vc <- setdiff(unused_vc, residual_names)
+
+  if (length(unused_vc) > 0) {
+    warning(
+      "vc() definitions not used in model formulas: ",
+      paste(unused_vc, collapse = ", ")
+    )
+  }
+
+
+  ## ---- 3. variable availability in data --------------------------------
+  vars_needed <- names(model_spec$variables)
+  vars_have   <- data_spec$colnames   # <-- FIXED
+
+  missing_vars <- setdiff(vars_needed, vars_have)
+
+  if (length(missing_vars) > 0) {
+    stop(
+      "Variables required by the model are missing from the data source: ",
+      paste(missing_vars, collapse = ", ")
+    )
+  }
+
+  ## ---- 4. ID variable consistency --------------------------------------
+  if (!is.null(data_spec$id) && !data_spec$id %in% vars_have) {
+    stop(
+      "DataSpec$id '", data_spec$id,
+      "' not found among data columns."
+    )
+  }
+
+  invisible(TRUE)
+}
+
+
 # ------------------------------------------------------------------
 # Kernel validators
 # ------------------------------------------------------------------

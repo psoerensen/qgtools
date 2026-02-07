@@ -20,6 +20,10 @@
 #' The \code{index} is the name of the grouping variable and must correspond
 #' exactly to the \code{(1 | index)} term in the model formula.
 #'
+#'# NOTE:
+# The variance component with index = "Residual" represents
+# the residual (units) variance and is implicit in model formulas.
+
 #' @details
 #' The interpretation of supplied variance and covariance information depends on
 #' the analysis task:

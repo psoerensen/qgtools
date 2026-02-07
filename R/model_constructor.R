@@ -338,3 +338,214 @@ qg_match_random_effects <- function(parsed_formulas, varcomp) {
 
   invisible(TRUE)
 }
+
+
+#' Extract explicit variable roles from parsed formulas
+#'
+#' @param parsed Output of qg_parse_formulas()
+#'
+#' @return Named list mapping variable names to roles
+#' @export
+qg_extract_variable_roles <- function(parsed) {
+
+  if (!is.list(parsed) || is.null(names(parsed))) {
+    stop("'parsed' must be the result of qg_parse_formulas()")
+  }
+
+  roles <- list()
+
+  for (trait in names(parsed)) {
+
+    tr <- parsed[[trait]]
+
+    ## ---- trait ----------------------------------------------------------
+    roles[[trait]] <- "trait"
+
+    ## ---- fixed effects --------------------------------------------------
+    for (v in tr$fixed) {
+      if (!nzchar(v)) next
+      roles[[v]] <- "fixed"
+    }
+
+    ## ---- random effects -------------------------------------------------
+    for (re in tr$random) {
+
+      # grouping factor
+      roles[[re$index]] <- "group"
+
+      # slopes are fixed covariates
+      if (length(re$slopes) > 0) {
+        for (s in re$slopes) {
+          roles[[s]] <- "fixed"
+        }
+      }
+    }
+  }
+
+  roles
+}
+
+# trait > group > fixed
+qg_normalize_roles <- function(roles) {
+
+  precedence <- c(trait = 3L, group = 2L, fixed = 1L)
+
+  vars <- unique(names(roles))
+  out <- list()
+
+  for (v in vars) {
+    r <- roles[names(roles) == v]
+    out[[v]] <- names(which.max(precedence[r]))
+  }
+
+  out
+}
+
+#' Convert variable-role mapping to ModelSpec format
+#'
+#' @param roles Named list from qg_extract_variable_roles()
+#'
+#' @return Named list suitable for JSON export
+#' @export
+qg_roles_to_spec <- function(roles) {
+
+  lapply(roles, function(role) {
+    list(role = role)
+  })
+}
+
+
+#' Validate a full qgtools model specification bundle
+#'
+#' Performs cross-consistency checks across DataSpec, ModelSpec,
+#' VarCompSpec (vcs), and KernelSpec.
+#'
+#' @param data Datalist object
+#' @param model Model specification list (from as_list.model())
+#' @param vcs Named list of vc objects
+#' @param kernels KernelSpec list (from as_json.kernels or internal list)
+#'
+#' @return Invisible TRUE if validation passes
+#' @export
+validate_bundle <- function(data, model, vcs, kernels) {
+
+  ## ------------------------------------------------------------------
+  ## Basic class checks
+  ## ------------------------------------------------------------------
+  if (!inherits(data, "Datalist"))
+    stop("`data` must be a Datalist object")
+
+  if (!is.list(model) || model$type != "ModelSpec")
+    stop("`model` must be a ModelSpec list")
+
+  if (!is.list(vcs) || any(!vapply(vcs, inherits, logical(1), "vc")))
+    stop("`vcs` must be a named list of vc objects")
+
+  if (!is.list(kernels) || kernels$type != "KernelSpec")
+    stop("`kernels` must be a KernelSpec list")
+
+  ## ------------------------------------------------------------------
+  ## Collect variables
+  ## ------------------------------------------------------------------
+  data_vars  <- data$colnames
+  model_vars <- names(model$variables)
+
+  ## Traits
+  traits <- model$traits
+
+  ## Fixed + random variables
+  fixed_vars <- unique(unlist(model$summary$fixed))
+  group_vars <- unique(unlist(lapply(
+    model$summary$random,
+    function(x) vapply(x, `[[`, character(1), "index")
+  )))
+
+  ## ------------------------------------------------------------------
+  ## Check: model variables exist in data
+  ## ------------------------------------------------------------------
+  missing_in_data <- setdiff(
+    c(traits, fixed_vars, group_vars),
+    data_vars
+  )
+
+  if (length(missing_in_data) > 0) {
+    stop(
+      "Variables used in model but missing from data: ",
+      paste(missing_in_data, collapse = ", ")
+    )
+  }
+
+  ## ------------------------------------------------------------------
+  ## Check: id variable exists
+  ## ------------------------------------------------------------------
+  if (!is.null(data$id) && !data$id %in% data_vars) {
+    stop(
+      "Declared id variable '", data$id,
+      "' not found in data columns"
+    )
+  }
+
+  ## ------------------------------------------------------------------
+  ## Check: random effects have vc definitions
+  ## ------------------------------------------------------------------
+  vc_indices <- vapply(vcs, function(x) x$index, character(1))
+
+  missing_vc <- setdiff(group_vars, vc_indices)
+  if (length(missing_vc) > 0) {
+    stop(
+      "Random effects in model missing vc() definitions: ",
+      paste(missing_vc, collapse = ", ")
+    )
+  }
+
+  unused_vc <- setdiff(vc_indices, group_vars)
+  if (length(unused_vc) > 0) {
+    warning(
+      "vc() definitions not referenced in model: ",
+      paste(unused_vc, collapse = ", ")
+    )
+  }
+
+  ## ------------------------------------------------------------------
+  ## Check: kernels referenced by vcs exist
+  ## ------------------------------------------------------------------
+  kernel_ids_model <- unique(vapply(
+    vcs,
+    function(vc) kernel_name(vc$kernel),
+    character(1)
+  ))
+
+  kernel_ids_spec <- names(kernels$kernels)
+
+  missing_kernels <- setdiff(kernel_ids_model, kernel_ids_spec)
+  if (length(missing_kernels) > 0) {
+    stop(
+      "Kernels referenced by vc() but missing in KernelSpec: ",
+      paste(missing_kernels, collapse = ", ")
+    )
+  }
+
+  unused_kernels <- setdiff(kernel_ids_spec, kernel_ids_model)
+  if (length(unused_kernels) > 0) {
+    warning(
+      "KernelSpec contains unused kernels: ",
+      paste(unused_kernels, collapse = ", ")
+    )
+  }
+
+  ## ------------------------------------------------------------------
+  ## Trait consistency in vc()
+  ## ------------------------------------------------------------------
+  for (nm in names(vcs)) {
+    vc <- vcs[[nm]]
+    bad_traits <- setdiff(vc$traits, traits)
+    if (length(bad_traits) > 0) {
+      stop(
+        "vc('", nm, "') refers to unknown trait(s): ",
+        paste(bad_traits, collapse = ", ")
+      )
+    }
+  }
+
+  invisible(TRUE)
+}

@@ -1,3 +1,4 @@
+library(qgtools)
 # Mouse example
 data <- makeDatalist(
   source = system.file(
@@ -5,7 +6,8 @@ data <- makeDatalist(
     package = "qgtools"
   ),
   format = "CSV",
-  id     = "id"
+  id     = "id",
+  sep     = ";"
 )
 
 PED <- makePEDlist(
@@ -15,7 +17,6 @@ PED <- makePEDlist(
   ),
   format = "SIMPLE"
 )
-
 
 vcs <- list(
   animal = vc(
@@ -32,13 +33,42 @@ vcs <- list(
 )
 
 formulas <- list(
-  BW = BW ~ sex + reps + (1 | dam) + (1 | id)
+  BW = BW ~ sex + reps + (1 | id) + (1 | id)
 )
 cat(as_json.vcs(vcs))
 cat(as_json.data(data))
 cat(as_json.kernels(vcs))
+
+## Authoring phase (R)
+
+data_spec    <- as_list.Datalist(data)
 task <- "reml"
+model_spec   <- as_list.model(formulas, task)
+kernel_spec  <- as_list.kernels(vcs)
+varcomp_spec <- as_list.vcs(vcs)
+
+validate_bundle(
+  data_spec    = data_spec,
+  model_spec   = model_spec,
+  varcomp_spec     = varcomp_spec,
+  kernel_spec = kernel_spec
+)
+
+str(varcomp_spec)
+str(kernel_spec)
+str(model_spec)
+
+formulas <- list(
+  BW = BW ~ sex + reps + (1 | dam) + (1 | id),
+  Gl = Gl ~ sex + reps + (1 | dam) + (1 | id)
+)
 cat(as_json.model(formulas, task))
+
+formulas <- list(
+  BW = BW ~ sex + reps + (1 | dam) + (1 | id)
+)
+task <- "reml"
+as_list.model(formulas, task)
 
 fit <- gfit(
   BW ~ sex + reps + (1 | id),

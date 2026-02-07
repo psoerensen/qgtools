@@ -6,6 +6,7 @@
 }
 
 
+
 #' Convert a vc object to a list suitable for JSON export
 #'
 #' @param x An object of class "vc"
@@ -13,10 +14,14 @@
 #'
 #' @return A named list
 #' @export
-as_list.vc <- function(x, name = NULL) {
+as_list.vc <- function(x) {
 
   if (!inherits(x, "vc"))
     stop("Object must be of class 'vc'")
+
+  if (is.null(x$kernel)) {
+    stop("vc must include a 'kernel' (use iid_kernel('default') or supply a kernel object).")
+  }
 
   out <- list(
     index     = x$index,
@@ -25,21 +30,13 @@ as_list.vc <- function(x, name = NULL) {
     structure = x$structure
   )
 
-  ## ---- starting values --------------------------------------------------
-  if (!is.null(x$start)) {
-    out$start <- x$start
-  }
+  if (!is.null(x$start))
+    out$start <- unclass(x$start)
 
-  ## ---- prior ------------------------------------------------------------
-  if (!is.null(x$prior)) {
+  if (!is.null(x$prior))
     out$prior <- as_list(x$prior)
-  } else {
+  else
     out$prior <- NULL
-  }
-
-  if (!is.null(name)) {
-    out <- setNames(list(out), name)
-  }
 
   out
 }
@@ -80,18 +77,15 @@ as_json.vcs <- function(vcs, pretty = TRUE) {
     stop("'vcs' must be a named list of vc objects")
 
   spec <- list(
-    type = "VCS",
-    components = Map(
-      function(vc, name) as_list.vc(vc, name = NULL),
-      vcs,
-      names(vcs)
-    )
+    type = "VarCompSpec",
+    components = lapply(vcs, as_list.vc)
   )
 
   spec$components <- setNames(
     spec$components,
     names(vcs)
   )
+
 
   jsonlite::toJSON(
     spec,
@@ -111,13 +105,27 @@ as_json.vcs <- function(vcs, pretty = TRUE) {
 #' @export
 kernel_name <- function(kernel) {
 
+  if (!requireNamespace("digest", quietly = TRUE)) {
+    stop("Package 'digest' is required for kernel hashing")
+  }
+
+
   if (is.null(kernel))
     stop("Kernel is NULL")
 
   if (!is.list(kernel) || is.null(kernel$type))
     stop("Invalid kernel object: missing 'type' field")
 
-  kernel$type
+  if (!is.null(kernel$meta$id))
+    return(kernel$meta$id)
+
+  paste0(kernel$type, "_",
+         digest::digest(
+           unclass(kernel$data),
+           algo = "xxhash64",
+           serialize = TRUE
+         )
+  )
 }
 
 
@@ -135,11 +143,25 @@ as_list.kernel <- function(x) {
     type = x$type
   )
 
-  if (!is.null(x$data))
-    out$data <- x$data
+  if (!is.null(x$data)) {
 
-  if (!is.null(x$meta))
-    out$meta <- x$meta
+    if (inherits(x$data, "PEDlist")) {
+      out$data <- pedlist_to_list(x$data)
+    } else {
+      ## strip class just in case
+      out$data <- unclass(x$data)
+    }
+  }
+
+  if (!is.null(x$meta)) {
+    out$meta <- unclass(x$meta)
+  }
+
+  out <- unclass(out)
+  stopifnot(
+    is.character(out$type),
+    is.null(out$data) || is.list(out$data)
+  )
 
   out
 }
@@ -166,6 +188,13 @@ as_json.kernels <- function(vcs, pretty = TRUE) {
     type = "KernelSpec",
     kernels = lapply(kernels, as_list.kernel)
   )
+
+  stopifnot(!any(vapply(
+    spec$kernels,
+    function(k) inherits(k, "PEDlist"),
+    logical(1)
+  )))
+
 
   jsonlite::toJSON(
     spec,
@@ -227,12 +256,28 @@ as_json.data <- function(data, pretty = TRUE) {
 #' @export
 as_list.model <- function(formulas, task, options = list()) {
 
+  stopifnot(
+    is.list(formulas),
+    all(vapply(formulas, inherits, logical(1), "formula"))
+  )
+
+  parsed <- qg_parse_formulas(formulas)
+
+  roles <- qg_extract_variable_roles(parsed)
+  #roles <- qg_normalize_roles(roles)
+
   list(
-    type     = "ModelSpec",
-    task     = toupper(task),
-    traits   = names(formulas),
-    formulas = vapply(formulas, deparse, character(1)),
-    options  = options
+    type = "ModelSpec",
+    task = toupper(task),
+    traits = names(formulas),
+
+    summary = list(
+      fixed  = lapply(parsed, function(x) x$fixed),
+      random = lapply(parsed, function(x) x$random)
+    ),
+
+    variables = qg_roles_to_spec(roles),
+    options   = options
   )
 }
 
@@ -276,3 +321,107 @@ export_model_bundle <- function(data, formulas, vcs, task, path = ".") {
 
   invisible(path)
 }
+
+
+pedlist_to_list <- function(x) {
+
+  if (!inherits(x, "PEDlist"))
+    stop("Expected a PEDlist object")
+
+  list(
+    type        = "PED",
+    kernel_type = x$kernel_type,
+    file        = x$fnPED,
+    format      = x$format,
+    encoding    = x$encoding,
+    method      = x$method,
+    method_code = x$method_code,
+    columns     = as.list(x$columns)
+  )
+}
+
+
+qg_validate_model_data <- function(data, model) {
+
+  vars_needed <- names(model$variables)
+  vars_have   <- data$colnames
+
+  missing <- setdiff(vars_needed, vars_have)
+
+  if (length(missing) > 0) {
+    stop(
+      "Variables required by the model are missing from the data source: ",
+      paste(missing, collapse = ", ")
+    )
+  }
+
+  invisible(TRUE)
+}
+
+
+#' Convert kernel specifications to list form
+#'
+#' @param vcs Named list of vc objects
+#' @return KernelSpec list
+#' @export
+as_list.kernels <- function(vcs) {
+
+  kernels <- lapply(vcs, function(vc) vc$kernel)
+  kernels <- kernels[!vapply(kernels, is.null, logical(1))]
+
+  kernel_ids <- vapply(kernels, kernel_name, character(1))
+
+  keep <- !duplicated(kernel_ids)
+  kernels <- kernels[keep]
+  kernel_ids <- kernel_ids[keep]
+
+  kernel_list <- lapply(kernels, as_list.kernel)
+  names(kernel_list) <- kernel_ids  # ← CRITICAL LINE
+
+  list(
+    type    = "KernelSpec",
+    kernels = kernel_list
+  )
+}
+
+# as_list.kernels <- function(vcs) {
+#
+#   if (!is.list(vcs) || any(!vapply(vcs, inherits, logical(1), "vc"))) {
+#     stop("'vcs' must be a named list of vc objects")
+#   }
+#
+#   kernels <- lapply(vcs, function(vc) vc$kernel)
+#   kernels <- kernels[!vapply(kernels, is.null, logical(1))]
+#
+#   kernel_ids <- vapply(kernels, kernel_name, character(1))
+#   names(kernels) <- kernel_ids
+#
+#   # deduplicate identical kernels
+#   kernels <- kernels[!duplicated(names(kernels))]
+#
+#   list(
+#     type = "KernelSpec",
+#     kernels = lapply(kernels, as_list.kernel)
+#   )
+# }
+
+#' Convert variance component specifications to a list
+#'
+#' @param vcs Named list of vc objects
+#' @return VarCompSpec list
+#' @export
+as_list.vcs <- function(vcs) {
+
+  if (!is.list(vcs) || any(!vapply(vcs, inherits, logical(1), "vc"))) {
+    stop("'vcs' must be a named list of vc objects")
+  }
+
+  list(
+    type = "VarCompSpec",
+    components = setNames(
+      lapply(vcs, as_list.vc),
+      names(vcs)
+    )
+  )
+}
+

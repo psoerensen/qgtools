@@ -4,7 +4,7 @@
 \alias{as_list.vc}
 \title{Convert a vc object to a list suitable for JSON export}
 \usage{
-as_list.vc(x, name = NULL)
+as_list.vc(x)
 }
 \arguments{
 \item{x}{An object of class "vc"}

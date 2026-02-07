@@ -1,5 +1,6 @@
 # Mouse data files
 mouse <- readRDS(url("https://github.com/psoerensen/bgcourse/raw/main/data/mouseqtl.rds"))
+mouse$id <- rownames(mouse)
 
 pedigree <- readRDS(url("https://github.com/psoerensen/bgcourse/raw/main/data/pedigree.rds"))
 pedigree$date_of_birth <- 1:nrow(pedigree)
@@ -9,7 +10,7 @@ colnames(genotypes) <- paste0("M",1:ncol(genotypes))
 
 genotypes <- cbind(id=rownames(genotypes),genotypes)
 
-write.csv2(mouse,
+write.csv2(mouse[,c("id","sire", "dam", "sex", "reps", "Gl", "BW", "M227", "M1139")],
            file = "inst/examples/mouse/mouse.csv",
            row.names = FALSE)
 

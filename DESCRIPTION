@@ -18,7 +18,9 @@ RoxygenNote: 7.3.3
 Imports:
     Rcpp,
     methods,
-    yaml
+    yaml,
+    digest,
+    jsonlite
 LinkingTo:
     Rcpp,
     RcppArmadillo

@@ -167,6 +167,57 @@ makeDatalist <- function(source,
     }
   )
 
+  ## ---- resolve column names -----------------------------------------------
+  resolved_colnames <- colnames
+
+  if (is.null(resolved_colnames)) {
+
+    resolved_colnames <- switch(
+      format,
+
+      DATAFRAME = {
+        names(source)
+      },
+
+      CSV = {
+        if (header) {
+
+          opts <- list(...)
+
+          utils::read.table(
+            source,
+            header = TRUE,
+            nrows  = 0,
+            sep    = opts$sep %||% ",",
+            quote  = opts$quote %||% "\"",
+            comment.char = opts$comment.char %||% "",
+            stringsAsFactors = FALSE,
+            check.names = FALSE
+          ) |> names()
+
+        } else {
+          NULL
+        }
+      },
+
+      PARQUET = {
+        # do NOT read full file
+        # backend or arrow can resolve later
+        NULL
+      },
+
+      DMU = {
+        # must already be supplied
+        colnames
+      },
+
+      PLINK = {
+        # minimal standard .fam schema
+        c("FID", "IID", "PID", "MID", "SEX", "PHENOTYPE")
+      }
+    )
+  }
+
   ## ---- build object -----------------------------------------------------
   structure(
     list(
@@ -177,7 +228,7 @@ makeDatalist <- function(source,
       roles    = roles,
       missing  = missing,
       header   = header,
-      colnames = colnames,
+      colnames = resolved_colnames,
       options  = list(...)
     ),
     class = "Datalist"
