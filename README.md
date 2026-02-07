@@ -46,6 +46,99 @@ C++/Fortran libraries. This design ensures consistent results across
 interfaces and enables flexible deployment in cloud and HPC
 environments.
 
+## Annotated example: mMltivariate mixed / Bayesian genomic model
+
+This example illustrates how qgtools separates: - model structure
+(formulas), - covariance definitions (kernels), - variance components or
+priors, - and estimation task.
+
+``` r
+## ------------------------------------------------------------------
+## Per-trait model formulas
+## ------------------------------------------------------------------
+## Formulas define *which* effects enter the model,
+## not how covariance is modeled.
+
+formulas <- list(
+  BW = BW ~ sex + reps + (1 | dam) + (1 | id),
+  Gl = Gl ~ sex + reps + (1 | dam) + (1 | id)
+)
+
+## ------------------------------------------------------------------
+## Kernel objects (covariance "recipes")
+## ------------------------------------------------------------------
+## Kernels describe how covariance across index levels is constructed
+## or accessed by the backend.
+
+PED <- makePEDlist(fnPED = "pedigree.txt")
+
+Glist <- makeGlist(
+  bedfiles = "chr.bed",
+  bimfiles = "chr.bim",
+  famfiles = "chr.fam"
+)
+
+## ------------------------------------------------------------------
+## Bayesian prior specification
+## ------------------------------------------------------------------
+## Priors replace variance components in Bayesian models.
+## Each prior corresponds to a random effect or latent component.
+
+priors <- list(
+  animal = prior(
+    index = "id",
+    traits = c("BW", "Gl"),
+    kernel = PED,
+    distribution = iw(df = 4, S = diag(2))
+  ),
+
+  marker = prior(
+    index = "marker",
+    traits = c("BW", "Gl"),
+    kernel = Glist,
+    distribution = bayesC(pi = c(0.95, 0.05))
+  ),
+
+  residual = prior(
+    index = "Residual",
+    traits = c("BW", "Gl"),
+    distribution = iw(df = 4, S = diag(2))
+  )
+)
+
+## ------------------------------------------------------------------
+## Model fitting
+## ------------------------------------------------------------------
+## The estimation task determines how the model is fit,
+## without changing the model specification.
+
+fit <- gfit(formulas, data, priors, task = "bayes")
+```
+
+## Kernel objects are lightweight descriptors
+
+Kernel objects in **qgtools** are designed as *lightweight descriptors*
+rather than containers of explicit covariance matrices. In particular,
+kernel objects do **not** store covariance matrices in memory.
+
+Instead, a kernel object specifies **how covariance should be
+constructed or accessed** by downstream computational backends.
+Depending on the use case, covariance information may be derived from:
+
+- pedigree files,
+- precomputed genomic relationship matrices (GRMs), or
+- genotype data stored directly on disk.
+
+This abstraction decouples the statistical model specification from the
+underlying data representation. As a result, the *same model formulation
+and user-facing code* can be applied seamlessly across a wide range of
+data scales—from small illustrative examples to very large genomic
+datasets—without modification.
+
+By deferring covariance construction to backend-specific
+implementations, qgtools achieves both flexibility and scalability while
+preserving a clear and consistent statistical interface.
+
 #### Prepare input data
 
 ``` r
