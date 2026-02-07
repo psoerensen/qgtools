@@ -46,52 +46,6 @@ C++/Fortran libraries. This design ensures consistent results across
 interfaces and enables flexible deployment in cloud and HPC
 environments.
 
-## Orthogonal layers
-
-qgtools separates model specification into four orthogonal layers:
-
-1.  **Formulas**  
-    Describe *what* effects enter the model (responses, fixed effects,
-    random-effect indices).
-
-2.  **Kernels**  
-    Describe *how* covariance is induced across levels of a random
-    effect (e.g. pedigree, genomic relationships, marker structure).
-
-3.  **Variance components or priors**  
-    Describe *how much* variation is attributed to each component:
-
-    - variance components (`vc()`) for REML / solver-based estimation
-    - prior distributions (`prior()`) for Bayesian inference
-
-4.  **Task**  
-    Determines *how* parameters are estimated (`"reml"`, `"solve"`,
-    `"bayes"`), without changing the model structure.
-
-These layers are specified independently but validated jointly before
-fitting.
-
-> **Important**
->
-> A model uses **either** variance components (`vc()`) **or** priors
-> (`prior()`), but never both.
->
-> - `vc()` is used for REML and solver-based estimation.
-> - `prior()` is used for Bayesian hierarchical models.
->
-> The same model formulas and kernels can be reused across paradigms.
-
-### Residual effects
-
-The residual variance is represented by a component with
-`index = "Residual"`.
-
-- It is **implicit** in model formulas and must **not** appear as
-  `(1 | Residual)`.
-- It must be explicitly specified using `vc()` (REML / solver) or
-  `prior()` (Bayesian).
-- Residual components never require a kernel.
-
 #### Prepare input data
 
 ``` r
@@ -375,6 +329,52 @@ consistency.
 Model specifications can also be exported as structured JSON, allowing
 the same model to be executed by external backends, workflow engines, or
 non-R/Python environments.
+
+## Orthogonal layers
+
+qgtools separates model specification into four orthogonal layers:
+
+1.  **Formulas**  
+    Describe *what* effects enter the model (responses, fixed effects,
+    random-effect indices).
+
+2.  **Kernels**  
+    Describe *how* covariance is induced across levels of a random
+    effect (e.g. pedigree, genomic relationships, marker structure).
+
+3.  **Variance components or priors**  
+    Describe *how much* variation is attributed to each component:
+
+    - variance components (`vc()`) for REML / solver-based estimation
+    - prior distributions (`prior()`) for Bayesian inference
+
+4.  **Task**  
+    Determines *how* parameters are estimated (`"reml"`, `"solve"`,
+    `"bayes"`), without changing the model structure.
+
+These layers are specified independently but validated jointly before
+fitting.
+
+> **Important**
+>
+> A model uses **either** variance components (`vc()`) **or** priors
+> (`prior()`), but never both.
+>
+> - `vc()` is used for REML and solver-based estimation.
+> - `prior()` is used for Bayesian hierarchical models.
+>
+> The same model formulas and kernels can be reused across paradigms.
+
+### Residual effects
+
+The residual variance is represented by a component with
+`index = "Residual"`.
+
+- It is **implicit** in model formulas and must **not** appear as
+  `(1 | Residual)`.
+- It must be explicitly specified using `vc()` (REML / solver) or
+  `prior()` (Bayesian).
+- Residual components never require a kernel.
 
 ## Performance and deployment
 
