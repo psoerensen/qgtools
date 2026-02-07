@@ -229,6 +229,50 @@ priors_mt <- list(
 )
 
 fit_mt <- gfit(formulas_mt, data, priors_mt, task = "bayes")
+
+
+## Single-trait Bayesian linear regression with marker-level priors
+
+formulas <- list(
+  BW = BW ~ sex + reps + (1 | dam)
+)
+
+# Optional marker-level metadata
+# Used by marker-based priors (e.g. BayesC / BayesR)
+# NULL means default behavior
+sets       <- NULL
+weights    <- NULL
+annotation <- NULL
+
+# Prior specification (Bayesian models only)
+priors <- list(
+  dam_env = prior(
+    index = "dam",
+    traits = "BW",
+    distribution = iw(df = 4, S = 1),
+    start = 1
+  ),
+  marker_genetic = prior(
+    index  = "marker",     # marker-level effects
+    traits = "BW",
+    kernel = Glist,        # genotype / marker kernel
+    distribution = bayesC(
+      pi         = c(0.95, 0.05),
+      gamma      = c(0, 1),
+      sets       = sets,
+      weights    = weights,
+      annotation = annotation
+    ),
+    start = 1
+  ),
+
+  residual = prior(
+    index  = "Residual",
+    traits = "BW",
+    distribution = iw(df = 4, S = 1),
+    start = 1
+  )
+)
 ```
 
 #### Example R vs Python interface
