@@ -443,34 +443,46 @@ fit_mt <- gfit(formulas_mt, data, priors_mt, task = "bayes")
 
 #### Bayesian multi-component linear models with marker-level priors
 
-Marker-level effects differ from classical random effects:
+Marker-level effects differ fundamentally from classical random effects:
 
-- They typically involve **thousands to millions of parameters**
-- Covariance arises implicitly from genotype structure, LD, and prior
-  assumptions
-- They are rarely written explicitly in mixed-model formulas
+- They typically involve **thousands to millions of coefficients**
+- Covariance is induced **implicitly** through the feature matrix
+  (e.g. genotypes), linkage disequilibrium, and the chosen prior
+- Explicit covariance matrices (e.g. GRMs) are usually avoided for
+  scalability
 
-In qgtools, marker effects are therefore specified **only through
-priors**, using a special `index = "marker"` together with a marker
-kernel (e.g. `Glist`).
+In **qgtools**, marker effects are treated as **feature-based model
+components**. They are declared in the model formula as a named effect
+(e.g. `(1 | marker)`), and linked to genotype data via a
+`featureMatrix()`.
 
-This mirrors how marker effects are handled in software such as BGLR and
-BayesR, while preserving a clean separation between model structure and
-inference.
+Regularization and covariance structure are then specified through
+**marker-level priors**, such as `bayesC()`, optionally using
+`featureSets` to define multiple variance components over disjoint (or
+annotated) subsets of markers.
 
-Unlike classical random effects, marker effects are not listed
-explicitly in the model formulas, because their dimensionality is too
-large and their covariance is induced implicitly through genotype
-structure and priors.
+This approach mirrors how marker effects are handled in software such as
+BGLR and BayesR, while preserving a clear separation between:
+
+- **model structure** (formulas and named effects),
+- **data representation** (feature matrices and feature sets), and
+- **inference** (Bayesian priors or REML/solver-based estimation).
+
+Unlike classical low-dimensional random effects, marker effects are not
+associated with explicit covariance matrices at the observation level.
+Instead, their covariance is induced implicitly through the feature
+matrix and the prior, enabling scalable multi-component and multi-trait
+models.
 
 ``` r
-## Single-trait Bayesian linear regression with marker-level priors
+## Multi-trait Bayesian linear regression with marker-level priors
 
 formulas <- list(
-  BW = BW ~ sex + reps + (1 | dam) + (1 | marker)
+  BW = BW ~ sex + reps + (1 | dam) + (1 | marker),
+  Gl = Gl ~ sex + reps + (1 | dam) + (1 | marker)
 )
 
-# Genotype feature container (e.g. PLINK BED/BIM/FAM).
+# Genotype feature container (e.g. PLINK BED/BIM/FAM)
 M <- featureMatrix(
   bedfiles = "chr.bed",
   bimfiles = "chr.bim",
@@ -486,31 +498,66 @@ featureSets <- list(
 priors <- list(
   dam = prior(
     variable     = "dam",
-    traits       = "BW",
-    distribution = iw(df = 4, S = 1),
-    start        = 1
+    traits       = c("BW", "Gl"),
+    distribution = iw(df = 4, S = diag(1, 2)),
+    start        = diag(1, 2)
   ),
 
   marker = prior(
     variable     = "marker",
-    traits       = "BW",
+    traits       = c("BW", "Gl"),
     features     = M,
     featureSets  = featureSets,
     distribution = bayesC(
       pi     = beta(95, 5),
-    sigma2 = invchisq(df = 4, scale = 0.001),
-    start  = list(
-      set1 = diag(0.005, 2),
-      set2 = diag(0.001, 2)
-    )
+      sigma2 = invchisq(df = 4, scale = 0.001),
+      start  = list(
+        set1 = diag(0.005, 2),
+        set2 = diag(0.001, 2)
+      )
     )
   ),
 
   residual = prior(
     variable     = "residual",
-    traits       = "BW",
-    distribution = iw(df = 4, S = 1),
-    start        = 1
+    traits       = c("BW", "Gl"),
+    distribution = iw(df = 4, S = diag(1, 2)),
+    start        = diag(1, 2)
   )
+)
+
+## Multi-trait marker BLUP (ridge) with feature sets using task = "solve"
+
+# Reuse: formulas, M, featureSets
+
+vc <- list(
+  dam = vc(
+    variable = "dam",
+    traits   = c("BW", "Gl"),
+    start    = diag(1, 2)
+  ),
+
+  marker = vc(
+    variable    = "marker",
+    traits      = c("BW", "Gl"),
+    features    = M,
+    featureSets = featureSets,
+    start       = list(
+      set1 = diag(0.005, 2),
+      set2 = diag(0.001, 2)
+    )
+  ),
+
+  residual = vc(
+    variable = "residual",
+    traits   = c("BW", "Gl"),
+    start    = diag(1, 2)
+  )
+)
+
+fit_solve <- gfit(
+  formulas = formulas,
+  vc       = vc,
+  task     = "solve"
 )
 ```
