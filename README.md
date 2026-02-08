@@ -12,52 +12,66 @@ model fitting**, allowing the same model to be estimated using different
 software backends and estimation paradigms within a unified modeling
 framework.
 
-## Core ideas
+## Core ideas and orthogonal layers
 
-- **Formulas define model structure**  
-  Per-trait formulas specify responses, fixed effects, and random
-  effects, but not how covariance is modeled.
+qgtools separates model specification into independent, orthogonal
+layers.  
+Each layer answers a distinct modeling question and can be modified
+without affecting the others.
 
-- **Variance components define covariance**  
-  Variance components describe how random effects induce covariance
-  across individuals and traits, using kernels and optional priors.
+1.  **Formulas — *what* enters the model**  
+    Per-trait formulas define responses, fixed effects, and
+    random-effect indices.  
+    They describe model structure, but not how covariance is modeled.
 
-- **Kernels are reusable objects**  
-  Pedigree, genomic, and other kernels are standalone objects that can
-  be reused across models and fitting tasks.
+2.  **Kernels — *how* covariance is structured**  
+    Kernels define how random effects induce covariance across
+    individuals or traits  
+    (e.g. pedigree, genomic relationships, marker-based structure).  
+    Kernels are standalone, reusable objects that can be shared across
+    models and tasks.
 
-- **Tasks control estimation**  
-  Models are fitted using `gfit()` with `task = "reml"`, `"bayes"`, or
-  `"solve"`, without changing the model specification.
+3.  **Variance components or priors — *how much* variation is
+    attributed**  
+    Each kernel is paired with:
 
-- **Scalable data access**  
-  Data are treated as a data source, allowing both in-memory and
-  disk-backed datasets to be used transparently.
+    - variance components (`vc()`) for REML or solver-based estimation,
+      or  
+    - prior distributions (`prior()`) for Bayesian inference.
 
-## Orthogonal layers
+4.  **Task — *how* the model is fitted**  
+    Estimation is controlled by `gfit()` via `task = "reml"`, `"solve"`,
+    or `"bayes"`,  
+    without changing the model specification.
 
-qgtools separates model specification into four orthogonal layers:
+5.  **Data — *where* the information comes from**  
+    Data are treated as abstract data sources, enabling transparent use
+    of in-memory or disk-backed datasets.
 
-1.  **Formulas**  
-    Describe *what* effects enter the model (responses, fixed effects,
-    random-effect indices).
+All layers are specified independently and validated jointly at fit
+time.
 
-2.  **Kernels**  
-    Describe *how* covariance is induced across levels of a random
-    effect (e.g. pedigree, genomic relationships, marker structure).
+## Simple example to illustate the steps
 
-3.  **Variance components or priors**  
-    Describe *how much* variation is attributed to each component:
+``` r
+This example illustrates how qgtools separates:
 
-    - variance components (`vc()`) for REML / solver-based estimation
-    - prior distributions (`prior()`) for Bayesian inference
+formulas <- list(
+  BW = BW ~ sex + (1 | id)
+)
 
-4.  **Task**  
-    Determines *how* parameters are estimated (`"reml"`, `"solve"`,
-    `"bayes"`), without changing the model structure.
+PED <- makePEDlist(fnPED = "pedigree.txt")
 
-These layers are specified independently but validated jointly before
-fitting.
+vcs <- list(
+  animal = vc(index = "id", traits = "BW", kernel = PED),
+  residual = vc(index = "Residual", traits = "BW")
+)
+
+fit <- gfit(formulas, data, vcs, task = "reml")
+```
+
+This same model can be refit as Bayesian by replacing *vc()* with
+*prior()* and changing task.
 
 ## R and Python interfaces
 
@@ -71,25 +85,86 @@ C++/Fortran libraries. This design ensures consistent results across
 interfaces and enables flexible deployment in cloud and HPC
 environments.
 
-## Simple example: Multivariate mixed / Bayesian genomic model
-
 ``` r
-This example illustrates how qgtools separates:
-
+# R interface
 formulas <- list(
-  BW = BW ~ sex + (1 | id)
+  BW = BW ~ sex + reps + (1 | id)
 )
 
 vcs <- list(
-  animal = vc(index = "id", traits = "BW", kernel = PED),
-  residual = vc(index = "Residual", traits = "BW")
+  animal = vc(index = "id", traits = "BW", kernel = PED)
 )
 
 fit <- gfit(formulas, data, vcs, task = "reml")
+
+# Python interface
+model = Model(
+    formulas={
+        "BW": "BW ~ sex + reps + (1 | id)"
+    },
+    vcs=[
+        vc(index="id", traits=["BW"], kernel=PED)
+    ]
+)
+
+fit = gfit(model, data, task="reml")
 ```
 
-This same model can be refit as Bayesian by replacing *vc()* with
-*prior()* and changing task.
+## Model validation and interoperability
+
+Before fitting, qgtools validates the full model bundle (data, formulas,
+kernels, and variance components or priors) to ensure internal
+consistency.
+
+Model specifications can also be exported as structured JSON, allowing
+the same model to be executed by external backends, workflow engines, or
+non-R/Python environments.
+
+### Residual effects
+
+The residual variance is represented by a component with
+`index = "Residual"`.
+
+- It is **implicit** in model formulas and must **not** appear as
+  `(1 | Residual)`
+- It must be explicitly specified using `vc()` (REML / solver) or
+  `prior()` (Bayesian)
+- Residual components never require a kernel
+
+## Performance and deployment
+
+qgtools is designed as a lightweight R (or Python) interface to
+high-performance computing backends.  
+Computationally intensive components (e.g. likelihood evaluation, large
+linear algebra, and sampling) can be implemented in compiled languages
+such as **C++ or Fortran**, while R (or Python) is used for model
+specification and orchestration.
+
+This separation provides: - high computational performance, -
+scalability to large datasets, - and a clear boundary between model
+definition and numerical implementation.
+
+For deployment, qgtools can be packaged into **containerized
+environments** (e.g. Docker or Singularity), allowing models to be
+executed reproducibly on high-performance computing platforms and cloud
+infrastructures such as **AWS** and **Azure**. Containers bundle the
+required libraries and runtimes and can be deployed on HPC batch systems
+or cloud services without exposing source code.
+
+This design enables qgtools to act as a unifying modeling layer while
+supporting multiple computational backends and deployment scenarios,
+from local workstations to large-scale cloud and HPC environments.
+
+**qgtools** handles large-scale data by taking advantage of:
+
+- multi-core processing using [openMP](https://www.openmp.org/)  
+- multithreaded matrix operations implemented in BLAS libraries
+  (e.g. [OpenBLAS](https://www.openblas.net/),
+  [ATLAS](https://math-atlas.sourceforge.net/) or
+  [MKL](https://en.wikipedia.org/wiki/Math_Kernel_Library))  
+- fast and memory-efficient batch processing of genotype data stored in
+  binary files (e.g. [PLINK](https://www.cog-genomics.org/plink2)
+  bedfiles)
 
 ## Annotated example: Multivariate mixed / Bayesian genomic model
 
@@ -439,96 +514,3 @@ priors <- list(
   )
 )
 ```
-
-#### Example R vs Python interface
-
-``` r
-# R interface
-formulas <- list(
-  BW = BW ~ sex + reps + (1 | id)
-)
-
-vcs <- list(
-  animal = vc(index = "id", traits = "BW", kernel = PED)
-)
-
-fit <- gfit(formulas, data, vcs, task = "reml")
-
-# Python interface
-model = Model(
-    formulas={
-        "BW": "BW ~ sex + reps + (1 | id)"
-    },
-    vcs=[
-        vc(index="id", traits=["BW"], kernel=PED)
-    ]
-)
-
-fit = gfit(model, data, task="reml")
-```
-
-## Model validation and interoperability
-
-Before fitting, qgtools validates the full model bundle (data, formulas,
-kernels, and variance components or priors) to ensure internal
-consistency.
-
-Model specifications can also be exported as structured JSON, allowing
-the same model to be executed by external backends, workflow engines, or
-non-R/Python environments.
-
-> **Important**
->
-> A model uses **either** variance components (`vc()`) **or** priors
-> (`prior()`), but never both.
->
-> - `vc()` is used for REML and solver-based estimation.
-> - `prior()` is used for Bayesian hierarchical models.
->
-> The same model formulas and kernels can be reused across paradigms.
-
-### Residual effects
-
-The residual variance is represented by a component with
-`index = "Residual"`.
-
-- It is **implicit** in model formulas and must **not** appear as
-  `(1 | Residual)`
-- It must be explicitly specified using `vc()` (REML / solver) or
-  `prior()` (Bayesian)
-- Residual components never require a kernel
-
-## Performance and deployment
-
-qgtools is designed as a lightweight R (or Python) interface to
-high-performance computing backends.  
-Computationally intensive components (e.g. likelihood evaluation, large
-linear algebra, and sampling) can be implemented in compiled languages
-such as **C++ or Fortran**, while R (or Python) is used for model
-specification and orchestration.
-
-This separation provides: - high computational performance, -
-scalability to large datasets, - and a clear boundary between model
-definition and numerical implementation.
-
-For deployment, qgtools can be packaged into **containerized
-environments** (e.g. Docker or Singularity), allowing models to be
-executed reproducibly on high-performance computing platforms and cloud
-infrastructures such as **AWS** and **Azure**. Containers bundle the
-required libraries and runtimes and can be deployed on HPC batch systems
-or cloud services without exposing source code.
-
-This design enables qgtools to act as a unifying modeling layer while
-supporting multiple computational backends and deployment scenarios,
-from local workstations to large-scale cloud and HPC environments.
-
-**qgtools** handles large-scale data by taking advantage of:
-
-- multi-core processing using [openMP](https://www.openmp.org/)  
-- multithreaded matrix operations implemented in BLAS libraries
-  (e.g. [OpenBLAS](https://www.openblas.net/),
-  [ATLAS](https://math-atlas.sourceforge.net/) or
-  [MKL](https://en.wikipedia.org/wiki/Math_Kernel_Library))  
-- fast and memory-efficient batch processing of genotype data stored in
-  binary files (e.g. [PLINK](https://www.cog-genomics.org/plink2)
-  bedfiles)
