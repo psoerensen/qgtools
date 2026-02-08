@@ -109,3 +109,124 @@ fit <- gfit(
   vcs  = vcs,
   task = "reml"
 )
+
+
+formulas <- list(
+  BW = BW ~ sex + reps + (1 | marker)
+)
+
+
+# Define feature matrix
+M <- featureMatrix(
+  bedfiles = "chr.bed",
+  bimfiles = "chr.bim",
+  famfiles = "chr.fam"
+)
+
+mSets <- list(1:1000, 1001:2000)
+
+# Define prior distribution for marker features used in bayes
+marker <- prior(
+  variable    = "marker",
+  traits   = c("BW", "Gl"),
+  features = M,
+  featureSets = mSets,
+  distribution = bayesC(
+    pi     = beta(95, 5),
+    sigma2 = invchisq(df = 4, scale = 0.001),
+    start  = list(diag(0.005, 2),diag(0.001, 2))
+  )
+)
+
+# Define prior distribution for marker features used in bayes
+marker <- prior(
+  variable    = "marker",
+  traits   = c("BW", "Gl"),
+  features = M,
+  featureSets = mSets,
+  distribution = ridge(
+    sigma2 = invchisq(df = 4, scale = 0.001),
+    start  = list(diag(0.005, 2),diag(0.001, 2))
+  )
+)
+
+marker <- vc(
+  variable = "marker",
+  traits = c("BW","Gl"),
+  features = M,
+  featureSets = mSets,
+  start  = list(set1 = diag(0.005,2), set2 = diag(0.001,2))
+)
+
+# Define variance component for marker features used in reml/solve
+marker = vc(
+  index     = "id",
+  traits    = c("BW", "Gl"),
+  features = M,
+  sets = sets,  # or group
+  kernel = iid_kernel(),
+  start = list(diag(0.001, 2),diag(0.002, 2),....diag(0.003, 2))
+)
+
+
+DNA <- featureMatrix(
+  bedfiles = "chr.bed",
+  bimfiles = "chr.bim",
+  famfiles = "chr.fam"
+)
+
+RNA <- featureMatrix(
+  counts   = "rna_counts.h5",
+  samples  = "samples.csv"
+)
+
+gSets <- list(
+  chr1 = 1:1000,
+  chr2 = 1001:2000
+)
+
+tSets <- list(
+  pathway1 = c("geneA","geneB","geneC"),
+  pathway2 = c("geneD","geneE")
+)
+
+
+marker <- vc(
+  variable    = "marker",
+  traits      = c("BW","Gl"),
+  features    = DNA,
+  featureSets = gSets,
+  start       = list(
+    chr1 = diag(0.005,2),
+    chr2 = diag(0.001,2)
+  )
+)
+
+transcript <- vc(
+  variable    = "transcript",
+  traits      = c("BW","Gl"),
+  features    = RNA,
+  featureSets = tSets,
+  start       = diag(0.01, 2)
+)
+
+marker <- prior(
+  variable    = "marker",
+  traits      = c("BW","Gl"),
+  features    = DNA,
+  featureSets = gSets,
+  distribution = bayesC(
+    pi     = beta(95,5),
+    sigma2 = invchisq(df=4, scale=0.001)
+  )
+)
+
+transcript <- prior(
+  variable    = "transcript",
+  traits      = c("BW","Gl"),
+  features    = T,
+  distribution = ridge(
+    sigma2 = invchisq(df=4, scale=0.01)
+  )
+)
+

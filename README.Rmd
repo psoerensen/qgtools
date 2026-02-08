@@ -64,6 +64,7 @@ fit <- gfit(formulas, data, vcs, task = "reml")
 This same model can be refit as Bayesian by replacing *vc()* with *prior()* and changing task.
 
 
+
 ## R and Python interfaces
 
 qgtools is designed with a language-agnostic core, allowing both **R and Python**
@@ -100,7 +101,6 @@ model = Model(
 
 fit = gfit(model, data, task="reml")
 ```
-
 
 ## Model validation and interoperability
 
@@ -258,12 +258,6 @@ PED <- makePEDlist(fnPED = "pedigree.txt", method = "S-D-NonInbred")
 ## Prepare genomic relationship kernel for additive genomic effects
 GRM <- makeGRMlist(fnGRM = "grm_inverse.txt", format = "BINARY", grm_type = "G-inverse")
 
-# Marker-level genotype container (e.g. PLINK BED/BIM/FAM). This provides information about where genotype data live on disk and how animals map to markers.
-Glist <- makeGlist(
-  bedfiles = "chr.bed",
-  bimfiles = "chr.bim",
-  famfiles = "chr.fam"
-)
 ```
 
 #### Linear mixed models: REML and solver-based estimation
@@ -457,43 +451,50 @@ covariance is induced implicitly through genotype structure and priors.
 ## Single-trait Bayesian linear regression with marker-level priors
 
 formulas <- list(
-  BW = BW ~ sex + reps + (1 | dam)
+  BW = BW ~ sex + reps + (1 | dam) + (1 | marker)
 )
 
-# Optional marker-level metadata
-# Used by marker-based priors (e.g. BayesC / BayesR)
-# NULL means default behavior
-sets       <- NULL
-weights    <- NULL
-annotation <- NULL
+# Genotype feature container (e.g. PLINK BED/BIM/FAM).
+M <- featureMatrix(
+  bedfiles = "chr.bed",
+  bimfiles = "chr.bim",
+  famfiles = "chr.fam"
+)
 
-# Prior specification (Bayesian models only)
+# Optional feature grouping (marker sets)
+featureSets <- list(
+  set1 = 1:1000,
+  set2 = 1001:2000
+)
+
 priors <- list(
-  dam_env = prior(
-    index = "dam",
-    traits = "BW",
+  dam = prior(
+    variable     = "dam",
+    traits       = "BW",
     distribution = iw(df = 4, S = 1),
-    start = 1
+    start        = 1
   ),
-  marker_genetic = prior(
-    index  = "marker",     # marker-level effects
-    traits = "BW",
-    kernel = Glist,        # genotype / marker kernel
+
+  marker = prior(
+    variable     = "marker",
+    traits       = "BW",
+    features     = M,
+    featureSets  = featureSets,
     distribution = bayesC(
-      pi         = c(0.95, 0.05),
-      variances  = c(0, 1),
-      sets       = sets,
-      weights    = weights,
-      annotation = annotation
-    ),
-    start = 1
+      pi     = beta(95, 5),
+    sigma2 = invchisq(df = 4, scale = 0.001),
+    start  = list(
+      set1 = diag(0.005, 2),
+      set2 = diag(0.001, 2)
+    )
+    )
   ),
 
   residual = prior(
-    index  = "Residual",
-    traits = "BW",
+    variable     = "residual",
+    traits       = "BW",
     distribution = iw(df = 4, S = 1),
-    start = 1
+    start        = 1
   )
 )
 
