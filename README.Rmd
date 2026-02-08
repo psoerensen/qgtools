@@ -5,7 +5,7 @@ output: github_document
 
 ## Overview
 
-**qgtools** is a framework for specifying and fitting mixed and hierarchical models, with a focus on quantitative genetics and complex covariance structures.
+**qgtools** is a framework for specifying and fitting mixed and hierarchical models, with a focus on quantitative genetics, high-dimensional predictors, and complex covariance structures.
 
 The key idea behind qgtools is to **separate model specification from model fitting**, allowing the same model to be estimated using different software backends and estimation paradigms within a unified modeling framework.
 
@@ -13,35 +13,44 @@ The key idea behind qgtools is to **separate model specification from model fitt
 ## Core ideas and orthogonal layers
 
 qgtools separates model specification into independent, orthogonal layers.  
-Each layer answers a distinct modeling question and can be modified without
-affecting the others.
+Each layer answers a distinct modeling question and can be modified without affecting the others.
 
 1. **Formulas — *what* enters the model**  
-   Per-trait formulas define responses, fixed effects, and random-effect indices.  
-   They describe model structure, but not how covariance is modeled.
+   Per-trait formulas define responses, fixed effects, and named random or latent effects  
+   (e.g. `(1 | id)`, `(1 | marker)`).  
+   Formulas describe *which* effects exist, but not how their covariance is modeled.
 
-2. **Kernels — *how* covariance is structured**  
-   Kernels define how random effects induce covariance across individuals or traits  
-   (e.g. pedigree, genomic relationships, marker-based structure).  
-   Kernels are standalone, reusable objects that can be shared across models and tasks.
+2. **Kernels and features — *how* effects act on the data**  
+   qgtools supports two complementary mechanisms:
+   - **Kernels** define *implicit* covariance structures across individuals or traits  
+     (e.g. pedigree, GRM, spatial or temporal correlation).
+   - **Feature matrices** define *explicit* linear predictors with potentially very large
+     numbers of coefficients (e.g. genotypes, transcriptomics, other omics layers).
+
+   Both kernels and features are reusable, standalone objects that can be shared across
+   models and estimation tasks.
 
 3. **Variance components or priors — *how much* variation is attributed**  
-   Each kernel is paired with:
+   Each effect is paired with either:
    - variance components (`vc()`) for REML or solver-based estimation, or  
    - prior distributions (`prior()`) for Bayesian inference.
 
+   For feature-based effects, optional `featureSets` allow effects to be decomposed
+   into multiple components with separate variance parameters.
+
 4. **Task — *how* the model is fitted**  
    Estimation is controlled by `gfit()` via `task = "reml"`, `"solve"`, or `"bayes"`,  
-   without changing the model specification.
+   without changing the model structure.
 
 5. **Data — *where* the information comes from**  
    Data are treated as abstract data sources, enabling transparent use of
-   in-memory or disk-backed datasets.
+   in-memory or disk-backed datasets (e.g. PLINK files, HDF5 matrices).
 
 All layers are specified independently and validated jointly at fit time.
 
 
-## Simple example to illustate the steps
+
+## Simple example to illusttate the concept
 
 ```{r, eval = FALSE}
 
