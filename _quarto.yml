@@ -15,5 +15,8 @@ website:
 
 format:
   html:
-    theme: cosmo
-    toc: true
+    embed-resources: true
+    theme: flatly
+    toc: false
+    code-fold: false
+    highlight-style: github
