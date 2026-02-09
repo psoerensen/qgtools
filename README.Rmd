@@ -491,3 +491,112 @@ remain unchanged.
 
 Additional worked examples for REML/solve and Bayesian mixed models (single- and multi-trait) are provided in the vignettes.
 
+
+
+
+## Case study: Genotype × feeding system interaction (DMU example)
+
+This example reproduces a classical DMU analysis of genotype × feeding system
+interactions using **qgtools**, while illustrating how the same model
+specification can be estimated using REML, solver-based BLUP, or Bayesian MCMC.
+
+The data consist of performance records on young bulls tested under two
+feeding systems. Measurements under the two systems are treated as **different
+traits**, allowing genotype × environment interaction to be expressed through
+cross-trait covariance.
+
+### Model description
+
+For each trait (feeding system), the model is:
+
+$$
+y = \text{Month} + \text{BreedYear} + \text{age} + \text{SystemBySire} + e
+$$
+
+- `Month`, `BreedYear`, and `age` are fixed effects (with `age` as a covariate)
+- `SystemBySire` is a random sire effect, nested within feeding system
+- Sires are assumed **unrelated** (no pedigree or genomic kernel)
+- Genotype × feeding system interaction is captured via **multi-trait covariance**
+  of sire effects
+
+### Data input
+
+```{r, eval = FALSE}
+## Observational data containing:
+## - ADG_sys1, ADG_sys2 (traits for feeding system 1 and 2)
+## - Month, BreedYear, age (covariates)
+## - SystemBySire (sire-by-system identifier)
+
+data <- makeDatalist(
+  source = "bulls_data.txt",
+  format = "CSV"
+)
+
+## Each feeding system is treated as a separate trait
+
+formulas <- list(
+  ADG_sys1 = ADG_sys1 ~ Month + BreedYear + age + (1 | SystemBySire),
+  ADG_sys2 = ADG_sys2 ~ Month + BreedYear + age + (1 | SystemBySire)
+)
+
+vcs <- list(
+  sire = vc(
+    variable = "SystemBySire",
+    traits   = c("ADG_sys1", "ADG_sys2"),
+    start    = matrix(
+      c(1.0, 0.3,
+        0.3, 1.2),
+      nrow = 2,
+      byrow = TRUE
+    )
+  ),
+  residual = vc(
+    variable = "residual",
+    traits   = c("ADG_sys1", "ADG_sys2"),
+    start    = diag(2)
+  )
+)
+
+fit_reml <- gfit(
+  formulas = formulas,
+  data     = data,
+  vc       = vcs,
+  task     = "reml"
+)
+
+## Uses the same model and variance components
+## but solves the mixed model equations without updating variances
+
+fit_solve <- gfit(
+  formulas = formulas,
+  data     = data,
+  vc       = vcs,
+  task     = "solve"
+)
+
+priors <- list(
+  sire = prior(
+    variable     = "SystemBySire",
+    traits       = c("ADG_sys1", "ADG_sys2"),
+    distribution = iw(df = 4, S = diag(2)),
+    start        = diag(2)
+  ),
+  residual = prior(
+    variable     = "residual",
+    traits       = c("ADG_sys1", "ADG_sys2"),
+    distribution = iw(df = 4, S = diag(2)),
+    start        = diag(2)
+  )
+)
+
+fit_bayes <- gfit(
+  formulas = formulas,
+  data     = data,
+  priors   = priors,
+  task     = "bayes"
+)
+
+
+```
+
+
