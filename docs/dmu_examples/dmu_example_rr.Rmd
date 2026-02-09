@@ -1,0 +1,136 @@
+---
+title: "Case study: Random regression model for GH challenge profile (DMU RR example)"
+output: html_document
+---
+
+
+This example reproduces the DMU random regression (RR) analysis of plasma growth
+hormone (GH) concentration measured repeatedly over time after stimulation.
+
+The model describes the GH profile using **normalized Legendre polynomials**
+(as covariates `L1`, `L2`, `L3`) and includes both:
+
+- a **permanent environmental (PE)** animal effect, and
+- an **additive genetic (animal)** effect using the pedigree relationship matrix.
+
+The same animal identifier enters the model twice, once for each component,
+exactly as in DMU.
+
+### Data and covariates
+
+Blood samples are taken at planned times after stimulation (with small deviations),
+so time is modeled using covariates derived from normalized time.
+
+The dataset contains (at minimum):
+
+- response: `GH`
+- fixed class effects: `yob`, `breed`, `p_age`, `td`
+- fixed covariate: `age`
+- Legendre covariates: `L1`, `L2`, `L3`
+- animal id: `id`
+- pedigree file defining the relationship matrix among animals
+
+
+### Prepare input data and kernels
+
+```{r, eval = FALSE}
+## Observational data (repeated records per animal)
+data <- makeDatalist(
+  source = "gh_profile.txt",
+  format = "CSV"
+)
+
+## Pedigree kernel for additive genetic effects
+PED <- makePEDlist(
+  fnPED  = "pedigree.txt",
+  method = "S-D-NonInbred"
+)
+
+## Two latent components use the same animal id:
+## - pe: permanent environmental RR effect (iid across animals)
+## - animal: additive genetic RR effect (pedigree kernel)
+
+## In practice, pe_id and animal_id can both be the 'id' column in the data;
+## they are separated conceptually by using different variable names below.
+
+formulas <- list(
+  GH = GH ~ yob + breed + p_age + td + age +
+    (1  | pe)     + (L1 + L2 + L3 | pe) +
+    (1  | animal) + (L1 + L2 + L3 | animal)
+)
+
+vcs <- list(
+  ## Permanent environmental random regression (iid across animals)
+  pe = vc(
+    variable = "pe",
+    traits   = "GH",
+    ## iid (no kernel) → corresponds to G_PE ⊗ I
+    start    = diag(4) * 0.5
+  ),
+
+  ## Additive genetic random regression (pedigree kernel)
+  animal = vc(
+    variable = "animal",
+    traits   = "GH",
+    kernel   = PED,
+    ## corresponds to G_A ⊗ A
+    start    = diag(4) * 1.0
+  ),
+
+  ## Residual variance (single trait)
+  residual = vc(
+    variable = "residual",
+    traits   = "GH",
+    start    = 1.0
+  )
+)
+
+fit_reml <- gfit(
+  formulas = formulas,
+  data     = data,
+  vc       = vcs,
+  task     = "reml"
+)
+
+## Solve mixed model equations with fixed (co)variance components
+fit_solve <- gfit(
+  formulas = formulas,
+  data     = data,
+  vc       = vcs,
+  task     = "solve"
+)
+
+priors <- list(
+  pe = prior(
+    variable     = "pe",
+    traits       = "GH",
+    distribution = iw(df = 6, S = diag(4)),
+    start        = diag(4)
+  ),
+
+  animal = prior(
+    variable     = "animal",
+    traits       = "GH",
+    kernel       = PED,
+    distribution = iw(df = 6, S = diag(4)),
+    start        = diag(4)
+  ),
+
+  residual = prior(
+    variable     = "residual",
+    traits       = "GH",
+    distribution = invchisq(df = 4, scale = 1.0),
+    start        = 1.0
+  )
+)
+
+fit_bayes <- gfit(
+  formulas = formulas,
+  data     = data,
+  priors   = priors,
+  task     = "bayes"
+)
+
+
+
+```

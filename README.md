@@ -550,17 +550,20 @@ task.
 - **Genotype × feeding system interaction**  
   Multi-trait model with unrelated sires and G×E expressed through
   cross-trait covariance.  
-  [View example →](examples/dmu_examples/dmu_example_1.html)
+  [View example
+  →](https://psoerensen.github.io/qgtools/examples/dmu_examples/dmu_example_1.html)
 
 - **Direct and maternal genetic effects in sheep growth**  
   Multi-trait pedigree model with direct genetic, maternal genetic, and
   environmental effects.  
-  [View example →](examples/dmu_examples/dmu_example_2.html)
+  [View example
+  →](https://psoerensen.github.io/qgtools/examples/dmu_examples/dmu_example_2.html)
 
 - **Random regression model for growth hormone profiles**  
   Longitudinal random regression model with permanent environmental and
   additive genetic effects using Legendre polynomials.  
-  [View example →](examples/dmu_examples/dmu_example_rr.html)
+  [View example
+  →](https://psoerensen.github.io/qgtools/examples/dmu_examples/dmu_example_rr.html)
 
 These examples illustrate how complex legacy DMU models translate
 directly into qgtools while benefiting from a clearer and more modular
