@@ -318,9 +318,91 @@ The same model structure can be estimated either as a classical mixed model
 variance specification and the estimation task.
 
 
+## Data input and preparation
+
+qgtools distinguishes between three broad classes of input data:
+standard observational data, structural data used to define covariance,
+and high-dimensional feature data. These inputs are prepared independently
+and combined later during model specification.
+
+### Standard data: responses and covariates
+
+Standard data include phenotypes, covariates, and other observed variables
+referenced directly in model formulas.
+
+Data may be provided either as an in-memory object or as a disk-backed source.
+
+```{r, eval = FALSE}
+## Observational data (phenotypes and covariates)
+data <- makeDatalist(
+  source = "data.txt",
+  format = "CSV"
+)
+
+```
+
+### Structural data: kernels
+
+Kernels describe how covariance is induced across levels of a model component.
+They are typically used for low-dimensional random effects, such as pedigree-
+based genetic effects.
 
 
-#### Prepare input data
+```{r, eval = FALSE}
+## Pedigree-based kernel for additive genetic effects
+PED <- makePEDlist(
+  fnPED  = "pedigree.txt",
+  method = "S-D-NonInbred"
+)
+```
+
+Kernel objects are lightweight descriptors and do not store explicit covariance
+matrices unless required by a backend.
+
+Precomputed relationship matrices may also be supplied when appropriate,
+but are not required for most workflows.
+
+```{r, eval = FALSE}
+## Optional: precomputed genomic relationship matrix
+GRM <- makeGRMlist(
+  fnGRM    = "grm_inverse.txt",
+  format   = "BINARY",
+  grm_type = "G-inverse"
+)
+```
+
+### High-dimensional predictors: feature matrices
+
+Feature matrices define explicit linear predictors with potentially very large
+numbers of coefficients. Typical examples include genotype matrices,
+transcriptomic measurements, or other omics data.
+
+Feature data are often stored on disk and accessed lazily by the backend.
+
+```{r, eval = FALSE}
+## Genotype feature matrix (e.g. PLINK BED/BIM/FAM)
+M <- featureMatrix(
+  bedfiles = "chr.bed",
+  bimfiles = "chr.bim",
+  famfiles = "chr.fam"
+)
+```
+
+Optional feature groupings can be supplied to define multiple variance
+components or prior structures over subsets of features.
+
+```{r, eval = FALSE}
+## Optional grouping of features
+featureSets <- list(
+  set1 = 1:1000,
+  set2 = 1001:2000
+)
+```
+
+Feature matrices and feature sets are later linked to model components
+via *vc()* (REML / solver) or *prior()* (Bayesian inference).
+
+### Prepare input data
 
 ```{r, eval = FALSE}
 
