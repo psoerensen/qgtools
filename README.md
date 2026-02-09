@@ -64,70 +64,67 @@ without affecting the others.
 All layers are specified independently and validated jointly at fit
 time.
 
-## Simple example to illusttate the concept
+## Simple example to illustrate the concept
+
+The following example shows a minimal linear mixed model and illustrates
+how qgtools separates **model structure**, **covariance specification**,
+and **estimation**.
 
 ``` r
-This example illustrates how qgtools separates:
+## ---------------------------------------------------------------
+## Model structure (formulas)
+## ---------------------------------------------------------------
+## Formulas define which effects enter the model,
+## but not how covariance is modeled.
 
 formulas <- list(
   BW = BW ~ sex + (1 | id)
 )
 
+## ---------------------------------------------------------------
+## Covariance specification (kernels + variance components)
+## ---------------------------------------------------------------
+## The pedigree kernel defines how covariance is induced
+## across levels of the 'id' effect.
+
 PED <- makePEDlist(fnPED = "pedigree.txt")
 
 vcs <- list(
-  animal = vc(index = "id", traits = "BW", kernel = PED),
-  residual = vc(index = "Residual", traits = "BW")
+  animal = vc(
+    variable = "id",
+    traits   = "BW",
+    kernel   = PED
+  ),
+  residual = vc(
+    variable = "residual",
+    traits   = "BW"
+  )
 )
+
+## ---------------------------------------------------------------
+## Model fitting
+## ---------------------------------------------------------------
+## The estimation task determines how the model is fit,
+## without changing the model structure.
 
 fit <- gfit(formulas, data, vcs, task = "reml")
 ```
 
-This same model can be refit as Bayesian by replacing *vc()* with
-*prior()* and changing task.
-
-## R and Python interfaces
-
-qgtools is designed with a language-agnostic core, allowing both **R and
-Python** interfaces to interact with the same underlying computational
-backends.
-
-Model specification and orchestration can be performed in either R or
-Python, while computationally intensive tasks are handled by shared
-C++/Fortran libraries. This design ensures consistent results across
-interfaces and enables flexible deployment in cloud and HPC
-environments.
-
-``` r
-# R interface
-formulas <- list(
-  BW = BW ~ sex + reps + (1 | id)
-)
-
-vcs <- list(
-  animal = vc(index = "id", traits = "BW", kernel = PED)
-)
-
-fit <- gfit(formulas, data, vcs, task = "reml")
-
-# Python interface
-model = Model(
-    formulas={
-        "BW": "BW ~ sex + reps + (1 | id)"
-    },
-    vcs=[
-        vc(index="id", traits=["BW"], kernel=PED)
-    ]
-)
-
-fit = gfit(model, data, task="reml")
-```
+The same model structure can be estimated as a Bayesian model by
+replacing *vc()* with *prior()* and setting *task=“bayes”*, without
+changing the formulas or kernels.
 
 ## Model validation and interoperability
 
-Before fitting, qgtools validates the full model bundle (data, formulas,
-kernels, and variance components or priors) to ensure internal
-consistency.
+Before fitting, qgtools validates the full model bundle  
+(data, formulas, kernels or features, and variance components or priors)
+to ensure internal consistency.
+
+This validation step checks, for example, that: - all variables
+referenced in formulas are defined, - kernels or feature matrices are
+compatible with the corresponding effects, - trait dimensions are
+consistent across components, and - required variance components or
+priors are supplied.
 
 Model specifications can also be exported as structured JSON, allowing
 the same model to be executed by external backends, workflow engines, or
@@ -136,26 +133,31 @@ non-R/Python environments.
 ### Residual effects
 
 The residual variance is represented by a component with
-`index = "Residual"`.
+`variable = "residual"`.
 
-- It is **implicit** in model formulas and must **not** appear as
-  `(1 | Residual)`
+- The residual effect is **implicit** in model formulas and must **not**
+  appear as `(1 | residual)`
 - It must be explicitly specified using `vc()` (REML / solver) or
   `prior()` (Bayesian)
-- Residual components never require a kernel
+- Residual components never require a kernel or features
 
 ## Performance and deployment
 
 qgtools is designed as a lightweight R (or Python) interface to
-high-performance computing backends.  
-Computationally intensive components (e.g. likelihood evaluation, large
-linear algebra, and sampling) can be implemented in compiled languages
-such as **C++ or Fortran**, while R (or Python) is used for model
-specification and orchestration.
+high-performance computational backends.  
+Computationally intensive components—such as likelihood evaluation,
+large-scale linear algebra, and sampling—are implemented in compiled
+languages such as **C++ or Fortran**, while R (or Python) is used for
+model specification and orchestration.
 
 This separation provides: - high computational performance, -
-scalability to large datasets, - and a clear boundary between model
+scalability to large datasets, and - a clear boundary between model
 definition and numerical implementation.
+
+By representing kernels and feature matrices as *lightweight
+descriptors*, qgtools avoids unnecessary memory usage and allows
+backends to construct covariance structures and linear predictors only
+when needed, using in-memory or disk-backed data as appropriate.
 
 For deployment, qgtools can be packaged into **containerized
 environments** (e.g. Docker or Singularity), allowing models to be
@@ -170,14 +172,78 @@ from local workstations to large-scale cloud and HPC environments.
 
 **qgtools** handles large-scale data by taking advantage of:
 
-- multi-core processing using [openMP](https://www.openmp.org/)  
+- multi-core processing using [openMP](https://www.openmp.org/)
 - multithreaded matrix operations implemented in BLAS libraries
   (e.g. [OpenBLAS](https://www.openblas.net/),
-  [ATLAS](https://math-atlas.sourceforge.net/) or
-  [MKL](https://en.wikipedia.org/wiki/Math_Kernel_Library))  
-- fast and memory-efficient batch processing of genotype data stored in
-  binary files (e.g. [PLINK](https://www.cog-genomics.org/plink2)
-  bedfiles)
+  [ATLAS](https://math-atlas.sourceforge.net/), or
+  [MKL](https://en.wikipedia.org/wiki/Math_Kernel_Library))
+- fast and memory-efficient batch processing of feature data stored on
+  disk (e.g. genotype data in
+  [PLINK](https://www.cog-genomics.org/plink2) bedfiles)
+
+## R and Python interfaces
+
+qgtools is designed with a **language-agnostic core**, allowing both **R
+and Python** interfaces to interact with the same underlying
+computational backends.
+
+Model specification and orchestration can be performed in either R or
+Python, while computationally intensive tasks (e.g. likelihood
+evaluation, large-scale linear algebra, sampling) are handled by shared
+C++/Fortran libraries.  
+This design ensures consistent results across interfaces and enables
+flexible deployment in cloud and HPC environments.
+
+The example below shows the *same mixed model* specified in R and
+Python.
+
+``` r
+## ---------------------------------------------------------------
+## R interface
+## ---------------------------------------------------------------
+## Model structure and covariance specification are expressed
+## using the same abstractions as in previous examples.
+
+formulas <- list(
+  BW = BW ~ sex + reps + (1 | id)
+)
+
+vcs <- list(
+  animal = vc(
+    variable = "id",
+    traits   = "BW",
+    kernel   = PED
+  ),
+  residual = vc(
+    variable = "residual",
+    traits   = "BW"
+  )
+)
+
+fit <- gfit(formulas, data, vcs, task = "reml")
+
+# ---------------------------------------------------------------
+# Python interface
+# ---------------------------------------------------------------
+# The same model specification expressed using Python syntax.
+# The underlying model and backend execution are identical.
+
+model = Model(
+    formulas={
+        "BW": "BW ~ sex + reps + (1 | id)"
+    },
+    vcs=[
+        vc(variable="id", traits=["BW"], kernel=PED),
+        vc(variable="residual", traits=["BW"])
+    ]
+)
+
+fit = gfit(model, data, task="reml")
+```
+
+Both interfaces construct the same internal model representation and
+invoke the same computational backend. Differences between R and Python
+are limited to syntax and user-facing language conventions.
 
 ## Annotated example: Multivariate mixed / Bayesian genomic model
 
@@ -248,33 +314,52 @@ The same model structure can be estimated either as a classical mixed
 model (REML / solver) or as a Bayesian hierarchical model by changing
 only the variance specification and the estimation task.
 
-## Kernel objects are lightweight descriptors
+## Kernel and feature objects are lightweight descriptors
 
-Kernel objects in **qgtools** are designed as *lightweight descriptors*
-rather than containers of explicit covariance matrices. In particular,
-kernel objects do **not** store covariance matrices in memory.
+Kernel and feature objects in **qgtools** are designed as *lightweight
+descriptors* rather than containers of explicit model matrices or
+parameters. In particular, they do **not** store large covariance
+matrices or design matrices in memory by default.
 
-Instead, a kernel object specifies **how covariance should be
-constructed or accessed** by downstream computational backends.
-Depending on the use case, covariance information may be derived from:
+Instead, these objects describe **how model components should be
+constructed or accessed** by downstream computational backends:
 
-- pedigree files,
-- precomputed genomic relationship matrices (GRMs), or
-- genotype data stored directly on disk.
+- **Kernel objects** specify how covariance should be induced across
+  levels of an effect  
+  (e.g. from pedigree information, precomputed relationship matrices, or
+  other structured sources).
 
-This abstraction decouples the statistical model specification from the
-underlying data representation. As a result, the *same model formulation
-and user-facing code* can be applied seamlessly across a wide range of
-data scales—from small illustrative examples to very large genomic
-datasets—without modification.
+- **Feature objects** specify how high-dimensional predictors enter the
+  model  
+  (e.g. genotype matrices, transcriptomic measurements, or other omics
+  features),  
+  potentially stored on disk and accessed in a streaming or block-wise
+  fashion.
 
-By deferring covariance construction to backend-specific
-implementations, qgtools achieves both flexibility and scalability while
-preserving a clear and consistent statistical interface.
+Depending on the estimation task and backend, covariance and linear
+predictors may be:
 
-- **Variance components vs priors** Classical mixed models use variance
-  components (`vc()`), while Bayesian models replace these with explicit
-  prior distributions (`prior()`), without changing formulas or kernels.
+- derived implicitly from pedigree or relationship information,
+- computed on the fly from feature matrices without forming explicit
+  covariance matrices, or
+- accessed from precomputed objects supplied by the user.
+
+This abstraction decouples **statistical model specification** from
+**data representation and numerical implementation**. As a result, the
+same model formulation and user-facing code can be applied seamlessly
+across a wide range of data scales—from small illustrative examples to
+very large genomic or multi-omics datasets—without modification.
+
+By deferring matrix construction and data access to backend-specific
+implementations, **qgtools** achieves both flexibility and scalability
+while preserving a clear and consistent statistical interface.
+
+- **Variance components vs priors**  
+  Classical mixed models associate kernels or features with variance
+  components (`vc()`),  
+  while Bayesian models replace these with explicit prior distributions
+  (`prior()`),  
+  without changing formulas, kernels, or feature definitions.
 
 #### Prepare input data
 
@@ -487,31 +572,63 @@ Instead, their covariance is induced implicitly through the feature
 matrix and the prior, enabling scalable multi-component and multi-trait
 models.
 
+## Annotated example: Multivariate mixed / Bayesian genomic model
+
 ``` r
-## Multi-trait Bayesian linear regression with marker-level priors
+## ------------------------------------------------------------------
+## Per-trait model formulas
+## ------------------------------------------------------------------
+## Formulas declare *which* effects enter the model,
+## but do not specify how covariance is modeled.
 
 formulas <- list(
-  BW = BW ~ sex + reps + (1 | dam) + (1 | marker),
-  Gl = Gl ~ sex + reps + (1 | dam) + (1 | marker)
+  BW = BW ~ sex + reps + (1 | dam) + (1 | animal) + (1 | marker),
+  Gl = Gl ~ sex + reps + (1 | dam) + (1 | animal) + (1 | marker)
 )
 
-# Genotype feature container (e.g. PLINK BED/BIM/FAM)
+## ------------------------------------------------------------------
+## Kernel-based effect: pedigree (random effect)
+## ------------------------------------------------------------------
+## Pedigree effects are naturally expressed via kernels.
+
+PED <- makePEDlist(fnPED = "pedigree.txt")
+
+
+## ------------------------------------------------------------------
+## Feature-based effect: markers (high-dimensional predictors)
+## ------------------------------------------------------------------
+## Marker effects are defined through a feature matrix
+
 M <- featureMatrix(
   bedfiles = "chr.bed",
   bimfiles = "chr.bim",
   famfiles = "chr.fam"
 )
 
-# Optional feature grouping (marker sets)
+## Optional grouping of markers into multiple variance components
 featureSets <- list(
   set1 = 1:1000,
   set2 = 1001:2000
 )
 
+## ------------------------------------------------------------------
+## Bayesian prior specification
+## ------------------------------------------------------------------
+## Priors replace variance components in Bayesian models.
+## Each prior corresponds to a named model component.
+
 priors <- list(
   dam = prior(
     variable     = "dam",
     traits       = c("BW", "Gl"),
+    distribution = iw(df = 4, S = diag(1, 2)),
+    start        = diag(1, 2)
+  ),
+
+  animal = prior(
+    variable     = "animal",
+    traits       = c("BW", "Gl"),
+    kernel       = PED,
     distribution = iw(df = 4, S = diag(1, 2)),
     start        = diag(1, 2)
   ),
@@ -539,14 +656,41 @@ priors <- list(
   )
 )
 
-## Multi-trait marker BLUP (ridge) with feature sets using task = "solve"
+## ------------------------------------------------------------------
+## Model fitting
+## ------------------------------------------------------------------
+## The estimation task determines how the model is fit,
+## without changing the model structure.
 
-# Reuse: formulas, M, featureSets
+fit_bayes <- gfit(
+  formulas = formulas,
+  data     = data,
+  priors   = priors,
+  task     = "bayes"
+)
+```
 
-vc <- list(
+The same model structure can be estimated using a marker BLUP
+formulation by replacing `prior()` with `vc()` and setting
+`task = "solve"`. The formulas, kernels, and feature matrices remain
+unchanged.
+
+``` r
+## ------------------------------------------------------------------
+## Marker BLUP (solver-based estimation)
+## ------------------------------------------------------------------
+
+vcs <- list(
   dam = vc(
     variable = "dam",
     traits   = c("BW", "Gl"),
+    start    = diag(1, 2)
+  ),
+
+  animal = vc(
+    variable = "animal",
+    traits   = c("BW", "Gl"),
+    kernel   = PED,
     start    = diag(1, 2)
   ),
 
@@ -570,7 +714,8 @@ vc <- list(
 
 fit_solve <- gfit(
   formulas = formulas,
-  vc       = vc,
+  data     = data,
+  vc       = vcs,
   task     = "solve"
 )
 ```
