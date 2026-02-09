@@ -491,10 +491,39 @@ remain unchanged.
 
 Additional worked examples for REML/solve and Bayesian mixed models (single- and multi-trait) are provided in the vignettes.
 
+## Classical quantitative genetics case studies (DMU examples)
+
+qgtools is designed to express a wide range of classical quantitative genetic
+models while cleanly separating model structure from estimation strategy.
+
+To demonstrate compatibility with established workflows, several standard
+examples from **DMU** are reproduced below using qgtools. In each case, the
+*same model specification* can be estimated using REML, solver-based BLUP, or
+Bayesian inference by changing only the estimation task.
+
+### DMU-based examples
+
+- **Genotype × feeding system interaction**  
+  Multi-trait model with unrelated sires and G×E expressed through cross-trait
+  covariance.  
+  [View example →](examples/dmu_example_1.md)
+
+- **Direct and maternal genetic effects in sheep growth**  
+  Multi-trait pedigree model with direct genetic, maternal genetic, and
+  environmental effects.  
+  [View example →](examples/dmu_example_2.md)
+
+- **Random regression model for growth hormone profiles**  
+  Longitudinal random regression model with permanent environmental and additive
+  genetic effects using Legendre polynomials.  
+  [View example →](examples/dmu_example_rr.md)
+
+These examples illustrate how complex legacy DMU models translate directly into
+qgtools while benefiting from a clearer and more modular model specification.
 
 
 
-## Case study: Genotype × feeding system interaction (DMU example)
+## Case study: Genotype × feeding system interaction (DMU example I)
 
 This example reproduces a classical DMU analysis of genotype × feeding system
 interactions using **qgtools**, while illustrating how the same model
@@ -595,7 +624,6 @@ fit_bayes <- gfit(
   priors   = priors,
   task     = "bayes"
 )
-
 
 ```
 
