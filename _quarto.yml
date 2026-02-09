@@ -1,0 +1,19 @@
+project:
+  type: website
+  output-dir: docs
+
+website:
+  title: "qgtools"
+  navbar:
+    left:
+      - href: index.qmd
+        text: Home
+      - href: examples/index.qmd
+        text: Examples
+      - href: https://github.com/psoerensen/qgtools
+        text: GitHub
+
+format:
+  html:
+    theme: cosmo
+    toc: true
