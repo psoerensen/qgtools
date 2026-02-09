@@ -17,6 +17,6 @@ format:
   html:
     embed-resources: true
     theme: flatly
-    toc: false
+    toc: true
     code-fold: false
     highlight-style: github
