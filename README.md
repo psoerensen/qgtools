@@ -113,10 +113,21 @@ while preserving a clear and consistent statistical interface.
 ## Simple example to illustrate the concept
 
 The following example shows a minimal linear mixed model and illustrates
-how qgtools separates **model structure**, **covariance specification**,
-and **estimation**.
+how qgtools separates **data input**, **model structure**, **covariance
+specification**, and **estimation**.
 
 ``` r
+## ---------------------------------------------------------------
+## Data input
+## ---------------------------------------------------------------
+## Observational data provide phenotypes and covariates referenced
+## in the model formulas.
+
+data <- makeDatalist(
+  source = "data.txt",
+  format = "CSV"
+)
+
 ## ---------------------------------------------------------------
 ## Model structure (formulas)
 ## ---------------------------------------------------------------
@@ -153,12 +164,17 @@ vcs <- list(
 ## The estimation task determines how the model is fit,
 ## without changing the model structure.
 
-fit <- gfit(formulas, data, vcs, task = "reml")
+fit <- gfit(
+  formulas = formulas,
+  data     = data,
+  vc       = vcs,
+  task     = "reml"
+)
 ```
 
 The same model structure can be estimated as a Bayesian model by
 replacing *vc()* with *prior()* and setting *task=“bayes”*, without
-changing the formulas or kernels.
+changing the formulas, kernels or data.
 
 ## Model validation and interoperability
 
