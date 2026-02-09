@@ -24,23 +24,19 @@ Each layer answers a distinct modeling question and can be modified without affe
    qgtools supports two complementary mechanisms:
    - **Kernels** define *implicit* covariance structures across individuals or traits  
      (e.g. pedigree, GRM, spatial or temporal correlation).
-   - **Feature matrices** define *explicit* linear predictors with potentially very large
-     numbers of coefficients (e.g. genotypes, transcriptomics, other omics layers).
+   - **Feature matrices** define *explicit* linear predictors with potentially very large numbers of coefficients (e.g. genotypes, transcriptomics, other omics layers).
 
-   Both kernels and features are reusable, standalone objects that can be shared across
-   models and estimation tasks.
+   Both kernels and features are reusable, standalone objects that can be shared across models and estimation tasks.
 
 3. **Variance components or priors — *how much* variation is attributed**  
    Each effect is paired with either:
    - variance components (`vc()`) for REML or solver-based estimation, or  
    - prior distributions (`prior()`) for Bayesian inference.
 
-   For feature-based effects, optional `featureSets` allow effects to be decomposed
-   into multiple components with separate variance parameters.
+   For feature-based effects, optional `featureSets` allow effects to be decomposed into multiple components with separate variance parameters.
 
 4. **Task — *how* the model is fitted**  
-   Estimation is controlled by `gfit()` via `task = "reml"`, `"solve"`, or `"bayes"`,  
-   without changing the model structure.
+   Estimation is controlled by `gfit()` via `task = "reml"`, `"solve"`, or `"bayes"`, without changing the model structure.
 
 5. **Data — *where* the information comes from**  
    Data are treated as abstract data sources, enabling transparent use of
@@ -101,9 +97,7 @@ The same model structure can be estimated as a Bayesian model by replacing *vc()
 
 ## Model validation and interoperability
 
-Before fitting, qgtools validates the full model bundle  
-(data, formulas, kernels or features, and variance components or priors)
-to ensure internal consistency.
+Before fitting, qgtools validates the full model bundle (data, formulas, kernels or features, and variance components or priors) to ensure internal consistency.
 
 This validation step checks, for example, that:
 - all variables referenced in formulas are defined,
@@ -111,30 +105,21 @@ This validation step checks, for example, that:
 - trait dimensions are consistent across components, and
 - required variance components or priors are supplied.
 
-Model specifications can also be exported as structured JSON,
-allowing the same model to be executed by external backends,
-workflow engines, or non-R/Python environments.
+Model specifications can also be exported as structured JSON, allowing the same model to be executed by external backends, workflow engines, or non-R/Python environments.
 
 ### Residual effects
 
-The residual variance is represented by a component with
-`variable = "residual"`.
+The residual variance is represented by a component with `variable = "residual"`.
 
-- The residual effect is **implicit** in model formulas and must **not**
-  appear as `(1 | residual)`
-- It must be explicitly specified using `vc()` (REML / solver)
-  or `prior()` (Bayesian)
+- The residual effect is **implicit** in model formulas and must **not** appear as `(1 | residual)`
+- It must be explicitly specified using `vc()` (REML / solver) or `prior()` (Bayesian)
 - Residual components never require a kernel or features
 
 
 ## Performance and deployment
 
-qgtools is designed as a lightweight R (or Python) interface to
-high-performance computational backends.  
-Computationally intensive components—such as likelihood evaluation,
-large-scale linear algebra, and sampling—are implemented in compiled
-languages such as **C++ or Fortran**, while R (or Python) is used for
-model specification and orchestration.
+qgtools is designed as a lightweight R (or Python) interface to high-performance computational backends. Computationally intensive components—such as likelihood evaluation, large-scale linear algebra, and sampling—are implemented in compiled
+languages such as **C++ or Fortran**, while R (or Python) is used for model specification and orchestration.
 
 This separation provides:
 - high computational performance,

@@ -53,8 +53,7 @@ without affecting the others.
 
 4.  **Task — *how* the model is fitted**  
     Estimation is controlled by `gfit()` via `task = "reml"`, `"solve"`,
-    or `"bayes"`,  
-    without changing the model structure.
+    or `"bayes"`, without changing the model structure.
 
 5.  **Data — *where* the information comes from**  
     Data are treated as abstract data sources, enabling transparent use
@@ -116,9 +115,9 @@ changing the formulas or kernels.
 
 ## Model validation and interoperability
 
-Before fitting, qgtools validates the full model bundle  
-(data, formulas, kernels or features, and variance components or priors)
-to ensure internal consistency.
+Before fitting, qgtools validates the full model bundle (data, formulas,
+kernels or features, and variance components or priors) to ensure
+internal consistency.
 
 This validation step checks, for example, that: - all variables
 referenced in formulas are defined, - kernels or feature matrices are
@@ -144,11 +143,11 @@ The residual variance is represented by a component with
 ## Performance and deployment
 
 qgtools is designed as a lightweight R (or Python) interface to
-high-performance computational backends.  
-Computationally intensive components—such as likelihood evaluation,
-large-scale linear algebra, and sampling—are implemented in compiled
-languages such as **C++ or Fortran**, while R (or Python) is used for
-model specification and orchestration.
+high-performance computational backends. Computationally intensive
+components—such as likelihood evaluation, large-scale linear algebra,
+and sampling—are implemented in compiled languages such as **C++ or
+Fortran**, while R (or Python) is used for model specification and
+orchestration.
 
 This separation provides: - high computational performance, -
 scalability to large datasets, and - a clear boundary between model
