@@ -45,6 +45,34 @@ Each layer answers a distinct modeling question and can be modified without affe
 All layers are specified independently and validated jointly at fit time.
 
 
+## Kernel and feature objects are lightweight descriptors
+
+Kernel and feature objects in **qgtools** are designed as *lightweight descriptors* rather than containers of explicit model matrices or parameters. In particular, they do **not** store large covariance matrices or design matrices in memory by default.
+
+Instead, these objects describe **how model components should be constructed or accessed** by downstream computational backends:
+
+- **Kernel objects** specify how covariance should be induced across levels of an effect  
+  (e.g. from pedigree information, precomputed relationship matrices, or other structured sources).
+
+- **Feature objects** specify how high-dimensional predictors enter the model  
+  (e.g. genotype matrices, transcriptomic measurements, or other omics features),  
+  potentially stored on disk and accessed in a streaming or block-wise fashion.
+
+Depending on the estimation task and backend, covariance and linear predictors may be:
+
+- derived implicitly from pedigree or relationship information,
+- computed on the fly from feature matrices without forming explicit covariance matrices, or
+- accessed from precomputed objects supplied by the user.
+
+This abstraction decouples **statistical model specification** from **data representation and numerical implementation**. As a result, the same model formulation and user-facing code can be applied seamlessly across a wide range of data scales—from small illustrative examples to very large genomic or multi-omics datasets—without modification.
+
+By deferring matrix construction and data access to backend-specific implementations, **qgtools** achieves both flexibility and scalability while preserving a clear and consistent statistical interface.
+
+- **Variance components vs priors**  
+  Classical mixed models associate kernels or features with variance components (`vc()`),  
+  while Bayesian models replace these with explicit prior distributions (`prior()`),  
+  without changing formulas, kernels, or feature definitions.
+
 
 ## Simple example to illustrate the concept
 
@@ -290,33 +318,6 @@ The same model structure can be estimated either as a classical mixed model
 variance specification and the estimation task.
 
 
-## Kernel and feature objects are lightweight descriptors
-
-Kernel and feature objects in **qgtools** are designed as *lightweight descriptors* rather than containers of explicit model matrices or parameters. In particular, they do **not** store large covariance matrices or design matrices in memory by default.
-
-Instead, these objects describe **how model components should be constructed or accessed** by downstream computational backends:
-
-- **Kernel objects** specify how covariance should be induced across levels of an effect  
-  (e.g. from pedigree information, precomputed relationship matrices, or other structured sources).
-
-- **Feature objects** specify how high-dimensional predictors enter the model  
-  (e.g. genotype matrices, transcriptomic measurements, or other omics features),  
-  potentially stored on disk and accessed in a streaming or block-wise fashion.
-
-Depending on the estimation task and backend, covariance and linear predictors may be:
-
-- derived implicitly from pedigree or relationship information,
-- computed on the fly from feature matrices without forming explicit covariance matrices, or
-- accessed from precomputed objects supplied by the user.
-
-This abstraction decouples **statistical model specification** from **data representation and numerical implementation**. As a result, the same model formulation and user-facing code can be applied seamlessly across a wide range of data scales—from small illustrative examples to very large genomic or multi-omics datasets—without modification.
-
-By deferring matrix construction and data access to backend-specific implementations, **qgtools** achieves both flexibility and scalability while preserving a clear and consistent statistical interface.
-
-- **Variance components vs priors**  
-  Classical mixed models associate kernels or features with variance components (`vc()`),  
-  while Bayesian models replace these with explicit prior distributions (`prior()`),  
-  without changing formulas, kernels, or feature definitions.
 
 
 #### Prepare input data
