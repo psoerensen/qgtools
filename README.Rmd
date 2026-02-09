@@ -245,79 +245,6 @@ fit = gfit(model, data, task="reml")
 Both interfaces construct the same internal model representation and invoke the same computational backend. Differences between R and Python are limited to syntax and user-facing language conventions.
 
 
-
-## Annotated example: Multivariate mixed / Bayesian genomic model
-
-
-```{r, eval = FALSE}
-## ------------------------------------------------------------------
-## Per-trait model formulas
-## ------------------------------------------------------------------
-## Formulas define *which* effects enter the model,
-## not how covariance is modeled.
-
-formulas <- list(
-  BW = BW ~ sex + reps + (1 | dam) + (1 | id),
-  Gl = Gl ~ sex + reps + (1 | dam) + (1 | id)
-)
-
-## ------------------------------------------------------------------
-## Kernel objects (covariance "recipes")
-## ------------------------------------------------------------------
-## Kernels describe how covariance across index levels is constructed
-## or accessed by the backend.
-
-PED <- makePEDlist(fnPED = "pedigree.txt")
-
-Glist <- makeGlist(
-  bedfiles = "chr.bed",
-  bimfiles = "chr.bim",
-  famfiles = "chr.fam"
-)
-
-## ------------------------------------------------------------------
-## Bayesian prior specification
-## ------------------------------------------------------------------
-## Priors replace variance components in Bayesian models.
-## Each prior corresponds to a random effect or latent component.
-
-priors <- list(
-  animal = prior(
-    index = "id",
-    traits = c("BW", "Gl"),
-    kernel = PED,
-    distribution = iw(df = 4, S = diag(2))
-  ),
-
-  marker = prior(
-    index = "marker",
-    traits = c("BW", "Gl"),
-    kernel = Glist,
-    distribution = bayesC(pi = c(0.95, 0.05))
-  ),
-
-  residual = prior(
-    index = "Residual",
-    traits = c("BW", "Gl"),
-    distribution = iw(df = 4, S = diag(2))
-  )
-)
-
-## ------------------------------------------------------------------
-## Model fitting
-## ------------------------------------------------------------------
-## The estimation task determines how the model is fit,
-## without changing the model specification.
-
-fit <- gfit(formulas, data, priors, task = "bayes")
-
-```
-
-The same model structure can be estimated either as a classical mixed model
-(REML / solver) or as a Bayesian hierarchical model by changing only the
-variance specification and the estimation task.
-
-
 ## Data input and preparation
 
 qgtools distinguishes between three broad classes of input data:
@@ -402,23 +329,78 @@ featureSets <- list(
 Feature matrices and feature sets are later linked to model components
 via *vc()* (REML / solver) or *prior()* (Bayesian inference).
 
-### Prepare input data
+
+
+## Annotated example: Multivariate mixed / Bayesian genomic model
+
 
 ```{r, eval = FALSE}
+## ------------------------------------------------------------------
+## Per-trait model formulas
+## ------------------------------------------------------------------
+## Formulas define *which* effects enter the model,
+## not how covariance is modeled.
 
-## Data may be provided as an in-memory data frame or as a disk-backed file
-data <- makeDatalist(
-  source = "data.txt",
-  format = "CSV"
+formulas <- list(
+  BW = BW ~ sex + reps + (1 | dam) + (1 | id),
+  Gl = Gl ~ sex + reps + (1 | dam) + (1 | id)
 )
 
-## Prepare pedigree kernel for additive genetic effects
-PED <- makePEDlist(fnPED = "pedigree.txt", method = "S-D-NonInbred")
+## ------------------------------------------------------------------
+## Kernel objects (covariance "recipes")
+## ------------------------------------------------------------------
+## Kernels describe how covariance across index levels is constructed
+## or accessed by the backend.
 
-## Prepare genomic relationship kernel for additive genomic effects
-GRM <- makeGRMlist(fnGRM = "grm_inverse.txt", format = "BINARY", grm_type = "G-inverse")
+PED <- makePEDlist(fnPED = "pedigree.txt")
+
+Glist <- makeGlist(
+  bedfiles = "chr.bed",
+  bimfiles = "chr.bim",
+  famfiles = "chr.fam"
+)
+
+## ------------------------------------------------------------------
+## Bayesian prior specification
+## ------------------------------------------------------------------
+## Priors replace variance components in Bayesian models.
+## Each prior corresponds to a random effect or latent component.
+
+priors <- list(
+  animal = prior(
+    index = "id",
+    traits = c("BW", "Gl"),
+    kernel = PED,
+    distribution = iw(df = 4, S = diag(2))
+  ),
+
+  marker = prior(
+    index = "marker",
+    traits = c("BW", "Gl"),
+    kernel = Glist,
+    distribution = bayesC(pi = c(0.95, 0.05))
+  ),
+
+  residual = prior(
+    index = "Residual",
+    traits = c("BW", "Gl"),
+    distribution = iw(df = 4, S = diag(2))
+  )
+)
+
+## ------------------------------------------------------------------
+## Model fitting
+## ------------------------------------------------------------------
+## The estimation task determines how the model is fit,
+## without changing the model specification.
+
+fit <- gfit(formulas, data, priors, task = "bayes")
 
 ```
+
+The same model structure can be estimated either as a classical mixed model
+(REML / solver) or as a Bayesian hierarchical model by changing only the
+variance specification and the estimation task.
 
 #### Linear mixed models: REML and solver-based estimation
 
