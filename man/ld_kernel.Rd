@@ -2,15 +2,15 @@
 % Please edit documentation in R/variance_component_constructor.R
 \name{ld_kernel}
 \alias{ld_kernel}
-\title{LD-based marker kernel}
+\title{LD-based kernel}
 \usage{
 ld_kernel(LDlist, sparse = TRUE)
 }
 \arguments{
-\item{sparse}{Logical. Whether LD is sparse.}
+\item{LDlist}{An LDlist object}
 
-\item{Glist}{A Glist object.}
+\item{sparse}{Logical; whether LD is sparse}
 }
 \description{
-LD-based marker kernel
+LD-based kernel
 }

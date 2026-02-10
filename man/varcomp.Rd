@@ -7,12 +7,11 @@
 varcomp(x = NULL, ...)
 }
 \arguments{
-\item{...}{Named variance component objects of class \code{"vc"}.}
+\item{...}{Named variance component objects of class "vc".}
 }
 \value{
-An object of class \code{"varcomp"}.
+An object of class "varcomp".
 }
 \description{
 Collect and validate a set of variance component specifications.
-Each component must be created with \code{vc()}.
 }

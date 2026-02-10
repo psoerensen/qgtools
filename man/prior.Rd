@@ -5,60 +5,42 @@
 \title{Prior specification for Bayesian hierarchical models}
 \usage{
 prior(
-  index,
+  variable,
   traits,
   kernel = NULL,
+  featureMatrix = NULL,
+  featureSets = NULL,
   structure = "unstructured",
   distribution,
   start = NULL
 )
 }
 \arguments{
-\item{index}{Character. Grouping variable or latent index.}
+\item{variable}{Character. Latent model variable (e.g. "animal", "marker").}
 
 \item{traits}{Character vector of trait names.}
 
-\item{kernel}{Optional kernel object defining covariance across index levels.}
+\item{kernel}{Optional kernel object defining covariance.}
+
+\item{featureMatrix}{Optional FeatureMatrix / FeatureSource object.
+Mutually exclusive with \code{kernel}.}
+
+\item{featureSets}{Optional named list defining feature subsets.
+Requires \code{featureMatrix}.}
 
 \item{structure}{Character. Trait covariance structure
-("unstructured", "diagonal", or "identity").}
+("unstructured", "diagonal", "identity").}
 
-\item{distribution}{Prior distribution object (e.g. \code{iw()}, \code{bayesC()}).}
+\item{distribution}{Prior distribution object
+(e.g. \code{iw()}, \code{bayesC()}, \code{bayesR()}).}
 
-\item{start}{Optional numeric scalar, vector, or matrix used as MCMC starting values.}
+\item{start}{Optional numeric, matrix, or list (per feature set).}
 }
 \value{
 An object of class \code{"prior"}.
 }
 \description{
-Define a prior for a model component in a Bayesian linear or mixed model.
-The structure mirrors \code{vc()}, but replaces variance estimation with
-explicit prior distributions.
-}
-\details{
-Each prior:
-\itemize{
-\item corresponds to a latent model component,
-\item is indexed by a grouping factor (\code{index}),
-\item optionally uses a kernel to induce covariance across index levels,
-\item specifies a prior distribution for variance, covariance, or effects,
-\item may include starting values for MCMC initialization.
-}
-
-The \code{index} must correspond either to:
-\itemize{
-\item a grouping factor in the model formula (e.g. \code{(1 | id)}), or
-\item a latent index (e.g. \code{"marker"} or \code{"Residual"}).
-}
-
-In Bayesian models:
-\itemize{
-\item \code{kernel} defines covariance across rows/levels,
-\item \code{structure} defines covariance across traits,
-\item \code{distribution} defines the prior on model parameters.
-}
-
-Marker-based priors (e.g. BayesC, BayesR) typically operate on effect sizes
-rather than explicit variance–covariance matrices. In these cases,
-covariance is induced implicitly via the kernel and marker design.
+Define a prior for a latent model component in a Bayesian model.
+The structure mirrors \code{vc()}, replacing variance estimation
+with explicit prior distributions.
 }

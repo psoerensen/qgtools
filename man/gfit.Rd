@@ -75,20 +75,20 @@ vcs_single <- list(
 
   ## Dam environmental effect
   dam_env = vc(
-    index  = "dam",
+    variable  = "dam",
     traits = "BW"
   ),
 
   ## Additive genetic animal effect
   animal_genetic = vc(
-    index  = "id",
+    variable  = "id",
     traits = "BW",
     kernel = PED
   ),
 
   ## Residual variance
   residual = vc(
-    index  = "Residual",
+    variable  = "residual",
     traits = "BW"
   )
 )
@@ -111,20 +111,20 @@ vcs_multi <- list(
 
   ## Dam environmental effect (correlated across traits)
   dam_env = vc(
-    index  = "dam",
+    variable  = "dam",
     traits = c("Gl", "BW")
   ),
 
   ## Additive genetic animal effect (animal model)
   animal_genetic = vc(
-    index  = "id",
+    variable  = "id",
     traits = c("Gl", "BW"),
     kernel = PED
   ),
 
   ## Residual covariance between traits
   residual = vc(
-    index  = "Residual",
+    variable  = "residual",
     traits = c("Gl", "BW")
   )
 )

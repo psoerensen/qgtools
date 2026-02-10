@@ -448,3 +448,74 @@ priors_mt <- list(
 fit_mt <- gfit(formulas_mt, data, priors_mt, task = "bayes")
 ```
 
+
+M <- featureMatrix(
+  bedfiles = "chr.bed",
+  bimfiles = "chr.bim",
+  famfiles = "chr.fam"
+)
+
+## Optional grouping of markers into multiple variance components
+featureSets <- list(
+  set1 = 1:1000,
+  set2 = 1001:2000
+)
+
+# This is for reml/solve
+cvs <- list(
+  marker = cv(
+    variable     = "marker",
+    traits       = c("BW", "Gl"),
+    featureMatrix     = M,
+    featureSets  = featureSets,
+    start  = list(
+        set1 = diag(0.005, 2),
+        set2 = diag(0.001, 2)
+    )
+  ),
+
+  residual = cv(
+    variable     = "residual",
+    traits       = c("BW", "Gl"),
+    start        = diag(1, 2)
+  )
+)
+
+
+# This is for bayesian modeling
+priors <- list(
+  marker = prior(
+    variable     = "marker",
+    traits       = c("BW", "Gl"),
+    features     = M,
+    featureSets  = featureSets,
+    distribution = bayesC(
+      pi     = beta(95, 5),
+      sigma2 = invchisq(df = 4, scale = 0.001),
+      start  = list(
+        set1 = diag(0.005, 2),
+        set2 = diag(0.001, 2)
+      )
+    )
+  ),
+
+  residual = prior(
+    variable     = "residual",
+    traits       = c("BW", "Gl"),
+    distribution = iw(df = 4, S = diag(1, 2)),
+    start        = diag(1, 2)
+  )
+)
+
+## ------------------------------------------------------------------
+## Model fitting
+## ------------------------------------------------------------------
+## The estimation task determines how the model is fit,
+## without changing the model structure.
+
+fit_bayes <- gfit(
+  formulas = formulas,
+  data     = data,
+  priors   = priors,
+  task     = "bayes"
+)

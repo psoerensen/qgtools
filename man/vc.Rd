@@ -5,67 +5,35 @@
 \title{Variance component specification}
 \usage{
 vc(
-  index,
+  variable,
   traits,
   kernel = NULL,
+  featureMatrix = NULL,
+  featureSets = NULL,
   structure = "unstructured",
-  start = NULL,
-  prior = NULL
+  start = NULL
 )
 }
 \arguments{
-\item{index}{Character. Grouping variable indexing the random effect.}
+\item{variable}{Character. Latent model variable used in (1 | variable).}
 
 \item{traits}{Character vector of trait names.}
 
-\item{kernel}{Kernel object defining covariance across index levels.}
+\item{kernel}{Optional kernel object defining covariance.}
 
-\item{structure}{Character. Declared trait covariance structure
-("unstructured", "diagonal", or "identity"). This parameter is primarily
-informational and may be used for validation or default prior construction
-in future versions.}
+\item{featureMatrix}{Optional FeatureMatrix / FeatureSource object driving
+a high-dimensional effect. Mutually exclusive with kernel.}
 
-\item{start}{Optional numeric scalar, vector, or matrix specifying starting
-values (or fixed values) for variance or covariance parameters.}
+\item{featureSets}{Optional named list defining subsets of features.
+Requires featureMatrix.}
 
-\item{prior}{Optional prior specification object.}
+\item{structure}{Character. Trait covariance structure.}
+
+\item{start}{Optional numeric, matrix, or list of starting values.}
 }
 \value{
-An object of class \code{"vc"}.
+An object of class "vc".
 }
 \description{
 Define a variance component (random effect) in a mixed or hierarchical model.
-Each variance component:
-\itemize{
-\item corresponds to a random effect in the model formulas,
-\item is indexed by a grouping factor (\code{index}),
-\item uses a kernel to induce covariance across index levels, and
-\item may optionally specify starting values and/or prior distributions
-for variance or covariance parameters.
 }
-}
-\details{
-Covariance may be induced explicitly (e.g. via pedigree or GRM-based kernels
-with variance–covariance parameters) or implicitly through model structure,
-such as marker-based effects where covariance arises from genotypes, LD, and
-marker-level priors.
-
-The \code{index} must match the grouping factor used for the corresponding
-random effect in the model formula.
-The \code{index} is the name of the grouping variable and must correspond
-exactly to the \code{(1 | index)} term in the model formula.
-}
-\section{NOTE:}{
-The interpretation of supplied variance and covariance information depends on
-the analysis task:
-\itemize{
-\item \strong{REML}: \code{start} values are used as starting values.
-\item \strong{Bayesian}: \code{prior} specifies prior distributions.
-\item \strong{Solve}: \code{start} values are treated as fixed parameters.
-}
-
-Not all kernels imply explicit variance–covariance matrices. For example,
-marker-based kernels may induce covariance implicitly without forming such
-matrices.
-}
-

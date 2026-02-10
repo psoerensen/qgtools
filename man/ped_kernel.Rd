@@ -7,7 +7,7 @@
 ped_kernel(PEDlist)
 }
 \arguments{
-\item{PEDlist}{A PEDlist object.}
+\item{PEDlist}{A PEDlist object}
 }
 \description{
 Pedigree-based kernel

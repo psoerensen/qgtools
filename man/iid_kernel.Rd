@@ -2,13 +2,13 @@
 % Please edit documentation in R/variance_component_constructor.R
 \name{iid_kernel}
 \alias{iid_kernel}
-\title{IID kernel}
+\title{IID kernel (independent and identically distributed)}
 \usage{
-iid_kernel(type = "iid")
+iid_kernel(label = "iid")
 }
 \arguments{
-\item{type}{Character. Label for IID kernel (e.g. "residual", "litter").}
+\item{label}{Optional label (e.g. "residual", "dam")}
 }
 \description{
-IID kernel
+Used for random intercepts, residuals, litter effects, etc.
 }

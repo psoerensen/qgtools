@@ -1,8 +1,11 @@
 #' Create a data source specification object
 #'
-#' Create a \code{Datalist} object describing how phenotype and covariate data
+#' Create a \code{DataSource} object describing how phenotype and covariate data
 #' are provided to a model. The data may be supplied as an in-memory data frame
 #' or as disk-backed files in a variety of common formats.
+#'
+#' The DataSource object is a declarative specification only and does not
+#' load or materialize data into memory.
 #'
 #' qgtools requires that all data variables have explicit names. Column names may
 #' be obtained either from headers in the data source or supplied directly by the
@@ -18,7 +21,7 @@
 #'
 #' Variable roles (e.g. traits, covariates, identifiers) may be specified
 #' explicitly using the \code{roles} argument or inferred later from model
-#' formulas. Conflicting or ambiguous specifications result in an error.
+#' formulas. Model formulas are authoritative in case of conflict.
 #'
 #' For DMU-style input, data may be provided in either ASCII (text) or binary
 #' format. ASCII input is expected to conform to INTEGER*4 and REAL*4 ranges,
@@ -53,24 +56,24 @@
 #' @param ... Additional format-specific options, stored but not interpreted
 #'   at construction time.
 #'
-#' @return An object of class \code{"Datalist"}.
+#' @return An object of class \code{"DataSource"}.
 #'
 #' @examples
 #' ## In-memory data frame
-#' data_df <- makeDatalist(
+#' data_df <- makeDataSource(
 #'   source = mouse,
 #'   format = "DATAFRAME"
 #' )
 #'
 #' ## CSV file with header
-#' data_csv <- makeDatalist(
+#' data_csv <- makeDataSource(
 #'   source = "mouse.csv",
 #'   format = "CSV",
 #'   id     = "id"
 #' )
 #'
 #' ## CSV file without header
-#' data_csv_noheader <- makeDatalist(
+#' data_csv_noheader <- makeDataSource(
 #'   source   = "data.txt",
 #'   format   = "CSV",
 #'   header   = FALSE,
@@ -78,7 +81,7 @@
 #' )
 #'
 #' ## DMU-style input with separate integer and real files
-#' data_dmu <- makeDatalist(
+#' data_dmu <- makeDataSource(
 #'   source = list(
 #'     integer = "data_int.txt",
 #'     real    = "data_real.txt"
@@ -96,7 +99,7 @@
 #' )
 #'
 #' @export
-makeDatalist <- function(source,
+makeDataSource <- function(source,
                          format   = c("DATAFRAME", "CSV", "DMU", "PLINK", "PARQUET"),
                          encoding = c("ASCII", "BINARY"),
                          id = NULL,
@@ -222,7 +225,7 @@ makeDatalist <- function(source,
   structure(
     list(
       format   = format,
-      encoding = encoding,   # only meaningful for DMU
+      encoding = encoding,
       source   = spec,
       id       = id,
       roles    = roles,
@@ -231,6 +234,35 @@ makeDatalist <- function(source,
       colnames = resolved_colnames,
       options  = list(...)
     ),
-    class = "Datalist"
+    class = "DataSource"
   )
+
 }
+
+
+## ------------------------------------------------------------------
+## TODO / design notes (to revisit later)
+##
+## 1. Consider renaming class "DataSource" -> "DataSpec" (or similar),
+##    to emphasize that this object is a data *specification* rather
+##    than a container of materialized data. Keep makeDataSource() as
+##    a backward-compatible alias if needed.
+##
+## 2. Clarify in documentation the distinction between:
+##      - `id` here: row-level individual identifier in the data, and
+##      - `variable = "id"` elsewhere: name of a model component.
+##
+## 3. Explicitly document the lifecycle of `roles`:
+##      - roles are optional hints,
+##      - model formulas are authoritative,
+##      - conflicts between roles and formulas should error.
+##
+## 4. Note that interpretation of `missing` values is backend-dependent
+##    and deferred to the computational engine.
+##
+## 5. Ensure `%||%` is defined or imported locally to avoid hidden
+##    dependencies.
+##
+## 6. Keep this object JSON-serializable and backend-agnostic
+##    (no data loading or R-specific assumptions here).
+## ------------------------------------------------------------------

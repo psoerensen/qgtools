@@ -2,13 +2,13 @@
 % Please edit documentation in R/variance_component_constructor.R
 \name{grm_kernel}
 \alias{grm_kernel}
-\title{Genomic relationship kernel}
+\title{Genomic relationship matrix (GRM) kernel}
 \usage{
 grm_kernel(GRMlist)
 }
 \arguments{
-\item{GRMlist}{A GRMlist object or similar.}
+\item{GRMlist}{A GRMlist object}
 }
 \description{
-Genomic relationship kernel
+Genomic relationship matrix (GRM) kernel
 }

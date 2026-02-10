@@ -55,20 +55,20 @@
 #'
 #'   ## Dam environmental effect
 #'   dam_env = vc(
-#'     index  = "dam",
+#'     variable  = "dam",
 #'     traits = "BW"
 #'   ),
 #'
 #'   ## Additive genetic animal effect
 #'   animal_genetic = vc(
-#'     index  = "id",
+#'     variable  = "id",
 #'     traits = "BW",
 #'     kernel = PED
 #'   ),
 #'
 #'   ## Residual variance
 #'   residual = vc(
-#'     index  = "Residual",
+#'     variable  = "residual",
 #'     traits = "BW"
 #'   )
 #' )
@@ -91,20 +91,20 @@
 #'
 #'   ## Dam environmental effect (correlated across traits)
 #'   dam_env = vc(
-#'     index  = "dam",
+#'     variable  = "dam",
 #'     traits = c("Gl", "BW")
 #'   ),
 #'
 #'   ## Additive genetic animal effect (animal model)
 #'   animal_genetic = vc(
-#'     index  = "id",
+#'     variable  = "id",
 #'     traits = c("Gl", "BW"),
 #'     kernel = PED
 #'   ),
 #'
 #'   ## Residual covariance between traits
 #'   residual = vc(
-#'     index  = "Residual",
+#'     variable  = "residual",
 #'     traits = c("Gl", "BW")
 #'   )
 #' )
@@ -227,7 +227,7 @@ qg_parse_formulas <- function(formulas) {
   eff <- .qg_parse_random_lhs(lhs)
 
   list(
-    index     = .qg_deparse1(grp),
+    variable     = .qg_deparse1(grp),
     intercept = eff$intercept,
     slopes    = eff$slopes,
     raw       = paste0("(", .qg_deparse1(lhs), " | ", .qg_deparse1(grp), ")")
@@ -311,15 +311,15 @@ qg_parse_formulas <- function(formulas) {
 qg_match_random_effects <- function(parsed_formulas, varcomp) {
 
   # Collect random-effect indices from formulas
-  formula_indices <- unique(unlist(lapply(parsed_formulas, function(tr) {
-    vapply(tr$random, `[[`, character(1), "index")
+  formula_variables <- unique(unlist(lapply(parsed_formulas, function(tr) {
+    vapply(tr$random, `[[`, character(1), "variable")
   })))
 
   # Collect vc indices
-  vc_indices <- vapply(varcomp, function(vc) vc$index, character(1))
+  vc_variables <- vapply(varcomp, function(vc) vc$variable, character(1))
 
   # Missing vc definitions
-  missing_vc <- setdiff(formula_indices, vc_indices)
+  missing_vc <- setdiff(formula_variables, vc_variables)
   if (length(missing_vc) > 0) {
     stop(
       "Random effects present in formulas but missing vc() definitions: ",
@@ -328,7 +328,7 @@ qg_match_random_effects <- function(parsed_formulas, varcomp) {
   }
 
   # Unused vc definitions (warning only)
-  unused_vc <- setdiff(vc_indices, formula_indices)
+  unused_vc <- setdiff(vc_variables, c(formula_variables, "residual"))
   if (length(unused_vc) > 0) {
     warning(
       "vc() definitions not referenced in formulas: ",
@@ -371,7 +371,7 @@ qg_extract_variable_roles <- function(parsed) {
     for (re in tr$random) {
 
       # grouping factor
-      roles[[re$index]] <- "group"
+      roles[[re$variable]] <- "group"
 
       # slopes are fixed covariates
       if (length(re$slopes) > 0) {
@@ -447,7 +447,13 @@ validate_bundle <- function(data, model, vcs, kernels) {
   ## ------------------------------------------------------------------
   ## Collect variables
   ## ------------------------------------------------------------------
-  data_vars  <- data$colnames
+  #data_vars  <- data$colnames
+  data_vars <- if (is.list(data$colnames)) {
+    unique(unlist(data$colnames))
+  } else {
+    data$colnames
+  }
+
   model_vars <- names(model$variables)
 
   ## Traits
@@ -457,7 +463,7 @@ validate_bundle <- function(data, model, vcs, kernels) {
   fixed_vars <- unique(unlist(model$summary$fixed))
   group_vars <- unique(unlist(lapply(
     model$summary$random,
-    function(x) vapply(x, `[[`, character(1), "index")
+    function(x) vapply(x, `[[`, character(1), "variable")
   )))
 
   ## ------------------------------------------------------------------
@@ -488,9 +494,9 @@ validate_bundle <- function(data, model, vcs, kernels) {
   ## ------------------------------------------------------------------
   ## Check: random effects have vc definitions
   ## ------------------------------------------------------------------
-  vc_indices <- vapply(vcs, function(x) x$index, character(1))
+  vc_variables <- vapply(vcs, function(x) x$variable, character(1))
 
-  missing_vc <- setdiff(group_vars, vc_indices)
+  missing_vc <- setdiff(group_vars, vc_variables)
   if (length(missing_vc) > 0) {
     stop(
       "Random effects in model missing vc() definitions: ",
@@ -498,7 +504,8 @@ validate_bundle <- function(data, model, vcs, kernels) {
     )
   }
 
-  unused_vc <- setdiff(vc_indices, group_vars)
+  #unused_vc <- setdiff(vc_variables, group_vars)
+  unused_vc <- setdiff(vc_variables, c(group_vars, "residual"))
   if (length(unused_vc) > 0) {
     warning(
       "vc() definitions not referenced in model: ",
