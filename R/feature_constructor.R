@@ -147,12 +147,25 @@ makeGlist <- function(fnBED = NULL,
     fnBIM  = fnBIM,
     fnFAM  = fnFAM,
     format = format,
-    extra  = list(...)
+
+    ## NEW: symbolic identifiers
+    ids = list(
+      type = "plink_fam",
+      fields = c("FID", "IID")
+    ),
+
+    rsids = list(
+      type = "plink_bim",
+      field = "rsid"
+    ),
+
+    extra = list(...)
   )
 
   class(Glist) <- "Glist"
   Glist
 }
+
 
 #' Validate a Glist object
 #'

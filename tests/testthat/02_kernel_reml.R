@@ -1,0 +1,75 @@
+cat("Running 02_kernel_reml.R\n")
+
+## ------------------------------------------------------------
+## Data (in-memory)
+## ------------------------------------------------------------
+pheno <- data.frame(
+  id  = 1:10,
+  BW  = rnorm(10),
+  sex = factor(rep(c("M", "F"), 5))
+)
+
+data <- makeDataSource(
+  source = pheno,
+  id     = "id",
+  roles  = list(
+    BW  = "trait",
+    sex = "fixed",
+    id  = "id"
+  )
+)
+
+## ------------------------------------------------------------
+## Data
+## ------------------------------------------------------------
+data <- makeDataSource(
+  source = "pheno.csv",
+  id     = "animal",
+  roles  = list(
+    BW     = "trait",
+    animal = "id"
+  )
+)
+
+## ------------------------------------------------------------
+## Model
+## ------------------------------------------------------------
+formulas <- list(
+  BW = BW ~ (1 | animal)
+)
+
+## ------------------------------------------------------------
+## Kernel
+## ------------------------------------------------------------
+PED <- makePEDlist(
+  fnPED = "pedigree.txt",
+  format = "SIMPLE"
+)
+
+vc_animal <- vc(
+  variable = "animal",
+  traits   = "BW",
+  kernel   = ped_kernel(PED)
+)
+
+vcs <- list(
+  animal   = vc_animal,
+  residual = vc("residual", "BW")
+)
+
+## ------------------------------------------------------------
+## Export + validate
+## ------------------------------------------------------------
+bundle_path <- tempfile("bundle_")
+dir.create(bundle_path)
+
+export_model_bundle(
+  data     = data,
+  features = NULL,
+  formulas = formulas,
+  vcs      = vcs,
+  task     = "reml",
+  path     = bundle_path
+)
+
+cat("✓ Kernel-backed REML workflow passed\n")

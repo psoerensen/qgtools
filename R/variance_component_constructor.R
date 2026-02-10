@@ -375,6 +375,16 @@ new_kernel <- function(type, data = NULL, meta = list()) {
   if (!is.character(type) || length(type) != 1)
     stop("'type' must be a single character string")
 
+  ## ------------------------------------------------------------------
+  ## Ensure kernel has a stable ID
+  ## ------------------------------------------------------------------
+  if (is.null(meta$id)) {
+    meta$id <- paste0(
+      type, "_",
+      formatC(abs(stats::runif(1)), digits = 6, format = "f")
+    )
+  }
+
   structure(
     list(
       type = type,
@@ -397,7 +407,10 @@ iid_kernel <- function(label = "iid") {
   new_kernel(
     type = "IID",
     data = NULL,
-    meta = list(label = label)
+    meta = list(
+      id    = paste0("IID_", label),
+      label = label
+    )
   )
 }
 

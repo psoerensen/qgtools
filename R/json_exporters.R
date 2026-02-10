@@ -7,6 +7,12 @@
     stop("Package 'jsonlite' is required for JSON export")
 }
 
+# S3 generic for JSON export helpers
+as_list <- function(x, ...) {
+  UseMethod("as_list")
+}
+
+
 # ==============================================================================
 # KERNEL EXPORT
 # ==============================================================================
@@ -187,19 +193,42 @@ as_json.priors <- function(priors, pretty = TRUE) {
   )
 }
 
+# Convert prior distribution objects to list
+as_list.prior_distribution <- function(x) {
+
+  stopifnot(inherits(x, "prior_distribution"))
+
+  list(
+    type   = x$type,
+    params = x$params
+  )
+}
+
 # ==============================================================================
 # DATA & FEATURE EXPORT
 # ==============================================================================
 
 # Data source (phenotypes, covariates, etc.)
 as_list.DataSource <- function(x) {
+
   stopifnot(inherits(x, "DataSource"))
+
+  # Do NOT serialize in-memory data
+  source <- x$source
+
+  if (is.list(source) && !is.null(source$data)) {
+    warning(
+      "DataSource contains in-memory data; ",
+      "data will not be written to data.json"
+    )
+    source <- NULL
+  }
 
   list(
     type     = "DataSpec",
     format   = x$format,
     encoding = x$encoding,
-    source   = x$source,
+    source   = source,
     id       = x$id,
     header   = x$header,
     colnames = x$colnames,
@@ -230,14 +259,72 @@ as_list.FeatureSource <- function(x) {
 }
 
 as_json.features <- function(features, pretty = TRUE) {
+
   .require_jsonlite()
+
   jsonlite::toJSON(
-    as_list.FeatureSource(features),
+    as_list(features),
     pretty = pretty,
     auto_unbox = TRUE,
     null = "null"
   )
 }
+
+
+#' Convert model specification to list for JSON export
+#'
+#' @param formulas Named list of formulas
+#' @param task Character ("reml", "bayes", "solve")
+#' @param options Optional list
+#' @return Named list
+#' @export
+as_list.model <- function(formulas, task, options = list()) {
+
+  stopifnot(
+    is.list(formulas),
+    all(vapply(formulas, inherits, logical(1), "formula"))
+  )
+
+  parsed <- qg_parse_formulas(formulas)
+
+  roles <- qg_extract_variable_roles(parsed)
+  #roles <- qg_normalize_roles(roles)
+
+  list(
+    type = "ModelSpec",
+    task = toupper(task),
+    traits = names(formulas),
+
+    summary = list(
+      fixed  = lapply(parsed, function(x) x$fixed),
+      random = lapply(parsed, function(x) x$random)
+    ),
+
+    variables = qg_roles_to_spec(roles),
+    options   = options
+  )
+}
+
+#' Export model specification to JSON
+#'
+#' @param formulas Named list of formulas
+#' @param task Character
+#' @param options Optional list
+#' @param pretty Logical
+#' @return JSON string
+#' @export
+as_json.model <- function(formulas, task, options = list(), pretty = TRUE) {
+
+  .require_jsonlite()
+
+  jsonlite::toJSON(
+    as_list.model(formulas, task, options),
+    pretty = pretty,
+    auto_unbox = TRUE,
+    null = "null"
+  )
+}
+
 
 # ==============================================================================
 # MODEL BUNDLE EXPORT
@@ -378,17 +465,33 @@ validate_bundle_json <- function(data_spec,
   }
 
   # --------------------------------------------------------------------------
-  # 4. DATA VARIABLE AVAILABILITY
+  # 4. DATA VARIABLE AVAILABILITY (OBSERVED VARIABLES ONLY)
   # --------------------------------------------------------------------------
 
   vars_needed <- names(model_spec$variables)
-  vars_have   <- if (is.list(data_spec$colnames)) {
+
+  # Variables backed by features or kernels do NOT require data columns
+  latent_vars <- vapply(
+    components,
+    function(x) {
+      cov <- x$covariance
+      cov$type %in% c("feature", "kernel")
+    },
+    logical(1)
+  )
+
+  latent_vars <- names(components)[latent_vars]
+
+  # Only enforce data availability for non-latent variables
+  vars_to_check <- setdiff(vars_needed, latent_vars)
+
+  vars_have <- if (is.list(data_spec$colnames)) {
     unique(unlist(data_spec$colnames))
   } else {
     data_spec$colnames
   }
 
-  missing_vars <- setdiff(vars_needed, vars_have)
+  missing_vars <- setdiff(vars_to_check, vars_have)
 
   if (length(missing_vars) > 0) {
     stop(
@@ -421,6 +524,29 @@ validate_bundle_json <- function(data_spec,
 
   invisible(TRUE)
 }
+
+#' Extract kernel name for JSON export
+#'
+#' @param kernel A kernel object
+#'
+#' @return Character scalar identifying the kernel type
+#' @export
+kernel_name <- function(kernel) {
+
+  stopifnot(inherits(kernel, "kernel"))
+
+  id <- kernel$meta$id
+
+  if (!is.character(id) || length(id) != 1 || !nzchar(id)) {
+    stop(
+      "Kernel has no valid 'meta$id'.\n",
+      "All kernels must have an explicit, non-empty ID."
+    )
+  }
+
+  id
+}
+
 
 #' .require_jsonlite <- function() {
 #'   if (!requireNamespace("jsonlite", quietly = TRUE)) {
@@ -528,25 +654,7 @@ validate_bundle_json <- function(data_spec,
 #' }
 #'
 #'
-#' #' Extract kernel name for JSON export
-#' #'
-#' #' @param kernel A kernel object
-#' #'
-#' #' @return Character scalar identifying the kernel type
-#' #' @export
-#' kernel_name <- function(kernel) {
-#'
-#'   if (!is.null(kernel$meta$id)) {
-#'     return(kernel$meta$id)
-#'   }
-#'
-#'   stop(
-#'     "Kernel has no explicit ID. ",
-#'     "Provide kernel$meta$id or construct kernels via helper functions."
-#'   )
-#' }
-#'
-#'
+
 #' #' Convert a kernel object to a list for JSON export
 #' #'
 #' #' @param x Kernel object
@@ -664,59 +772,6 @@ validate_bundle_json <- function(data_spec,
 #'   )
 #' }
 #'
-#' #' Convert model specification to list for JSON export
-#' #'
-#' #' @param formulas Named list of formulas
-#' #' @param task Character ("reml", "bayes", "solve")
-#' #' @param options Optional list
-#' #' @return Named list
-#' #' @export
-#' as_list.model <- function(formulas, task, options = list()) {
-#'
-#'   stopifnot(
-#'     is.list(formulas),
-#'     all(vapply(formulas, inherits, logical(1), "formula"))
-#'   )
-#'
-#'   parsed <- qg_parse_formulas(formulas)
-#'
-#'   roles <- qg_extract_variable_roles(parsed)
-#'   #roles <- qg_normalize_roles(roles)
-#'
-#'   list(
-#'     type = "ModelSpec",
-#'     task = toupper(task),
-#'     traits = names(formulas),
-#'
-#'     summary = list(
-#'       fixed  = lapply(parsed, function(x) x$fixed),
-#'       random = lapply(parsed, function(x) x$random)
-#'     ),
-#'
-#'     variables = qg_roles_to_spec(roles),
-#'     options   = options
-#'   )
-#' }
-#'
-#' #' Export model specification to JSON
-#' #'
-#' #' @param formulas Named list of formulas
-#' #' @param task Character
-#' #' @param options Optional list
-#' #' @param pretty Logical
-#' #' @return JSON string
-#' #' @export
-#' as_json.model <- function(formulas, task, options = list(), pretty = TRUE) {
-#'
-#'   .require_jsonlite()
-#'
-#'   jsonlite::toJSON(
-#'     as_list.model(formulas, task, options),
-#'     pretty = pretty,
-#'     auto_unbox = TRUE,
-#'     null = "null"
-#'   )
-#' }
 #'
 #'
 #'
