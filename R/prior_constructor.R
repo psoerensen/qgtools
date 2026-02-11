@@ -4,7 +4,23 @@
 #' The structure mirrors \code{vc()}, replacing variance estimation
 #' with explicit prior distributions.
 #'
-#' @param variable Character. Latent model variable (e.g. "animal", "marker").
+#' A prior:
+#' \itemize{
+#'   \item references a latent indexing variable (as used in model formulas),
+#'   \item attaches exactly one covariance mechanism (kernel or featureMatrix),
+#'   \item specifies a prior distribution over model parameters,
+#'   \item optionally provides starting values for initialization.
+#' }
+#'
+#' Multiple priors may reference the same \code{variable}. This allows
+#' decomposition of a single latent effect into multiple Bayesian components
+#' (e.g. pedigree-based and marker-based genetic effects acting on the same
+#' individuals).
+#'
+#' The residual component must use \code{variable = "residual"} and must not
+#' be kernel- or feature-backed.
+#'
+#' @param variable Character. Latent model variable (e.g. "id", "animal").
 #' @param traits Character vector of trait names.
 #' @param kernel Optional kernel object defining covariance.
 #' @param featureMatrix Optional FeatureMatrix / FeatureSource object.
@@ -144,18 +160,28 @@ summary.prior <- function(object, ...) {
 
   ## ---- kernel-backed ----------------------------------------------------
   if (cov_type == "kernel") {
+
+    kernel_id <- if (!is.null(object$kernel$meta$id)) {
+      object$kernel$meta$id
+    } else {
+      NA_character_
+    }
+
     out$kernel <- list(
       type = object$kernel$type,
-      id   = object$kernel$meta$id %||% NA_character_
+      id   = kernel_id
     )
   }
 
   ## ---- feature-backed --------------------------------------------------
   if (cov_type == "feature") {
+
     out$feature <- list(
-      class  = class(object$featureMatrix)[1],
-      n_rows = length(object$featureMatrix$ids),
-      n_cols = length(object$featureMatrix$rsids)
+      class      = class(object$featureMatrix)[1],
+      id_type    = if (!is.null(object$featureMatrix$ids$type))
+        object$featureMatrix$ids$type else NA_character_,
+      column_type = if (!is.null(object$featureMatrix$rsids$type))
+        object$featureMatrix$rsids$type else NA_character_
     )
 
     if (!is.null(object$featureSets)) {
@@ -173,14 +199,10 @@ summary.prior <- function(object, ...) {
   )
 
   ## ---- starting values -------------------------------------------------
-  if (!is.null(object$start)) {
-    out$start <- list(
-      provided = TRUE,
-      type     = class(object$start)[1]
-    )
-  } else {
-    out$start <- list(provided = FALSE)
-  }
+  out$start <- list(
+    provided = !is.null(object$start),
+    type     = if (!is.null(object$start)) class(object$start)[1] else NA_character_
+  )
 
   class(out) <- "summary.prior"
   out
@@ -205,19 +227,19 @@ print.summary.prior <- function(x, ...) {
 
   if (!is.null(x$feature)) {
     cat("  Feature matrix:\n")
-    cat("    Class:", x$feature$class, "\n")
-    cat("    Rows: ", x$feature$n_rows, "\n")
-    cat("    Cols: ", x$feature$n_cols, "\n")
+    cat("    Class:      ", x$feature$class, "\n")
+    if (!is.na(x$feature$id_type))
+      cat("    Row ID type:", x$feature$id_type, "\n")
+    if (!is.na(x$feature$column_type))
+      cat("    Col ID type:", x$feature$column_type, "\n")
 
     if (!is.null(x$feature$sets)) {
       cat("    Feature sets:\n")
       for (i in seq_along(x$feature$sets$names)) {
-        cat(
-          "      - ",
-          x$feature$sets$names[i],
-          " (", x$feature$sets$sizes[i], ")\n",
-          sep = ""
-        )
+        cat("      - ",
+            x$feature$sets$names[i],
+            " (", x$feature$sets$sizes[i], ")\n",
+            sep = "")
       }
     }
   }

@@ -1,14 +1,21 @@
 cat("Running 03_feature_reml.R\n")
 
 ## ------------------------------------------------------------
-## Data
+## Data (in-memory)
 ## ------------------------------------------------------------
+pheno <- data.frame(
+  id  = 1:10,
+  BW  = rnorm(10),
+  sex = factor(rep(c("M", "F"), 5))
+)
+
 data <- makeDataSource(
-  source = "pheno.csv",
+  source = pheno,
   id     = "id",
   roles  = list(
-    BW = "trait",
-    id = "id"
+    BW  = "trait",
+    sex = "fixed",
+    id  = "id"
   )
 )
 
@@ -16,20 +23,16 @@ data <- makeDataSource(
 ## Model
 ## ------------------------------------------------------------
 formulas <- list(
-  BW = BW ~ (1 | marker)
+  BW = BW ~ (1 | id)
 )
 
 ## ------------------------------------------------------------
 ## Features
 ## ------------------------------------------------------------
-G <- makeGlist(
+featureMatrix <- makeGlist(
   fnBED = "chr.bed",
   fnBIM = "chr.bim",
   fnFAM = "chr.fam"
-)
-
-features <- makeFeatureSource(
-  geno = G
 )
 
 featureSets <- list(
@@ -42,9 +45,9 @@ featureSets <- list(
 ## ------------------------------------------------------------
 vcs <- list(
   marker = vc(
-    variable      = "marker",
+    variable      = "id",
     traits        = "BW",
-    featureMatrix = features,
+    featureMatrix = featureMatrix,
     featureSets   = featureSets
   ),
   residual = vc(

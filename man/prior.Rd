@@ -16,7 +16,7 @@ prior(
 )
 }
 \arguments{
-\item{variable}{Character. Latent model variable (e.g. "animal", "marker").}
+\item{variable}{Character. Latent model variable (e.g. "id", "animal").}
 
 \item{traits}{Character vector of trait names.}
 
@@ -43,4 +43,21 @@ An object of class \code{"prior"}.
 Define a prior for a latent model component in a Bayesian model.
 The structure mirrors \code{vc()}, replacing variance estimation
 with explicit prior distributions.
+}
+\details{
+A prior:
+\itemize{
+\item references a latent indexing variable (as used in model formulas),
+\item attaches exactly one covariance mechanism (kernel or featureMatrix),
+\item specifies a prior distribution over model parameters,
+\item optionally provides starting values for initialization.
+}
+
+Multiple priors may reference the same \code{variable}. This allows
+decomposition of a single latent effect into multiple Bayesian components
+(e.g. pedigree-based and marker-based genetic effects acting on the same
+individuals).
+
+The residual component must use \code{variable = "residual"} and must not
+be kernel- or feature-backed.
 }

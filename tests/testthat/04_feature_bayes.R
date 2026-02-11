@@ -24,7 +24,7 @@ data <- makeDataSource(
 ## Model
 ## ------------------------------------------------------------
 formulas <- list(
-  BW = BW ~ (1 | marker)
+  BW = BW ~ (1 | id)
 )
 
 ## ------------------------------------------------------------
@@ -36,7 +36,7 @@ G <- makeGlist(
   fnFAM = "chr.fam"
 )
 
-features <- makeFeatureSource(
+featureMatrix <- makeFeatureSource(
   geno = G
 )
 
@@ -50,9 +50,9 @@ featureSets <- list(
 ## ------------------------------------------------------------
 priors <- list(
   marker = prior(
-    variable      = "marker",
+    variable      = "id",
     traits        = "BW",
-    featureMatrix = features,
+    featureMatrix = featureMatrix,
     featureSets   = featureSets,
     distribution  = bayesC(
       pi    = c(0.95, 0.05),

@@ -1,6 +1,29 @@
 #' Variance component specification
 #'
-#' Define a variance component (random effect) in a mixed or hierarchical model.
+#' Define a variance component associated with a latent model variable
+#' (random effect) in a mixed or hierarchical model.
+#'
+#' A variance component:
+#' \itemize{
+#'   \item references a latent indexing variable (as used in model formulas),
+#'   \item attaches exactly one covariance mechanism (kernel or featureMatrix),
+#'   \item defines trait-level covariance structure,
+#'   \item optionally provides starting values.
+#' }
+#'
+#' Multiple variance components may reference the same \code{variable}.
+#' This allows covariance decomposition of a single random effect into
+#' multiple components (e.g. pedigree + marker-based variation).
+#'
+#' For example, additive genetic variation indexed by \code{id}
+#' may include:
+#' \itemize{
+#'   \item a pedigree-based kernel component, and
+#'   \item one or more feature-based components.
+#' }
+#'
+#' The residual component must use \code{variable = "residual"} and
+#' must not be kernel- or feature-backed.
 #'
 #' @param variable Character. Latent model variable used in (1 | variable).
 #' @param traits Character vector of trait names.
