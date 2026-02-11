@@ -302,20 +302,37 @@ print.varcomp <- function(x, ...) {
 #'
 #' @return A named list summarizing the variance component.
 #' @export
+#' Summarize a variance component
+#'
+#' Produce a structured summary of a variance component, describing
+#' how covariance is induced and which traits and features are involved.
+#'
+#' @param object An object of class "vc".
+#' @param ... Unused.
+#'
+#' @return A named list summarizing the variance component.
+#' @export
 summary.vc <- function(object, ...) {
 
   stopifnot(inherits(object, "vc"))
 
-  ## ---- covariance type --------------------------------------------------
+  ## ------------------------------------------------------------------
+  ## Identify covariance mechanism
+  ## ------------------------------------------------------------------
+
   cov_type <- if (!is.null(object$kernel)) {
     "kernel"
   } else if (!is.null(object$featureMatrix)) {
     "feature"
-  } else if (object$variable == "residual") {
+  } else if (identical(object$variable, "residual")) {
     "residual"
   } else {
     "iid"
   }
+
+  ## ------------------------------------------------------------------
+  ## Base summary
+  ## ------------------------------------------------------------------
 
   out <- list(
     variable   = object$variable,
@@ -324,84 +341,148 @@ summary.vc <- function(object, ...) {
     structure  = object$structure
   )
 
-  ## ---- kernel-backed ----------------------------------------------------
+  ## ------------------------------------------------------------------
+  ## Kernel-backed
+  ## ------------------------------------------------------------------
+
   if (cov_type == "kernel") {
 
-    kernel_id <- if (!is.null(object$kernel$meta$id)) {
-      object$kernel$meta$id
-    } else {
-      NA_character_
-    }
+    k <- object$kernel
 
     out$kernel <- list(
-      type = object$kernel$type,
-      id   = kernel_id
+      type = if (!is.null(k$type)) k$type else NA_character_,
+      id   = if (!is.null(k$meta) && !is.null(k$meta$id)) k$meta$id else NA_character_
     )
   }
 
-  ## ---- feature-backed ---------------------------------------------------
+  ## ------------------------------------------------------------------
+  ## Feature-backed
+  ## ------------------------------------------------------------------
+
   if (cov_type == "feature") {
 
-    out$feature <- list(
-      class       = class(object$featureMatrix)[1],
-      id_type     = object$featureMatrix$ids$type %||% NA_character_,
-      column_type = object$featureMatrix$rsids$type %||% NA_character_
+    fm <- object$featureMatrix
+
+    feature_info <- list(
+      class = class(fm)[1]
     )
 
+    ## Attempt to extract row/column metadata if available
+    if (!is.null(fm$ids)) {
+      feature_info$id_type <-
+        if (is.list(fm$ids) && !is.null(fm$ids$type)) {
+          fm$ids$type
+        } else if (is.character(fm$ids)) {
+          "materialized"
+        } else {
+          NA_character_
+        }
+    }
+
+    if (!is.null(fm$rsids)) {
+      feature_info$rsid_type <-
+        if (is.list(fm$rsids) && !is.null(fm$rsids$type)) {
+          fm$rsids$type
+        } else if (is.character(fm$rsids)) {
+          "materialized"
+        } else {
+          NA_character_
+        }
+    }
+
+    ## Feature sets
     if (!is.null(object$featureSets)) {
-      out$feature$sets <- list(
+      feature_info$sets <- list(
         names = names(object$featureSets),
         sizes = vapply(object$featureSets, length, integer(1))
       )
     }
+
+    out$feature <- feature_info
   }
 
-  out$start <- list(
-    provided = !is.null(object$start),
-    type     = if (!is.null(object$start)) class(object$start)[1] else NA_character_
-  )
+  ## ------------------------------------------------------------------
+  ## Starting values
+  ## ------------------------------------------------------------------
+
+  if (!is.null(object$start)) {
+    out$start <- list(
+      provided = TRUE,
+      type     = class(object$start)[1]
+    )
+  } else {
+    out$start <- list(provided = FALSE)
+  }
 
   class(out) <- "summary.vc"
   out
 }
 
 #' @export
+#' @export
 print.summary.vc <- function(x, ...) {
 
   cat("Variance component summary\n")
+  cat("----------------------------------\n")
+
   cat("  Variable:   ", x$variable, "\n")
   cat("  Traits:     ", paste(x$traits, collapse = ", "), "\n")
   cat("  Covariance: ", x$covariance, "\n")
   cat("  Structure:  ", x$structure, "\n")
 
+  ## ------------------------------------------------------------------
+  ## Kernel-backed
+  ## ------------------------------------------------------------------
+
   if (!is.null(x$kernel)) {
-    cat("  Kernel:\n")
-    cat("    Type:", x$kernel$type, "\n")
-    if (!is.na(x$kernel$id))
-      cat("    ID:  ", x$kernel$id, "\n")
+    cat("\n  Kernel:\n")
+
+    if (!is.null(x$kernel$type))
+      cat("    Type: ", x$kernel$type, "\n", sep = "")
+
+    if (!is.null(x$kernel$id) && !is.na(x$kernel$id))
+      cat("    ID:   ", x$kernel$id, "\n", sep = "")
   }
 
+  ## ------------------------------------------------------------------
+  ## Feature-backed
+  ## ------------------------------------------------------------------
+
   if (!is.null(x$feature)) {
-    cat("  Feature matrix:\n")
-    cat("    Class:      ", x$feature$class, "\n")
-    if (!is.na(x$feature$id_type))
+
+    cat("\n  Feature matrix:\n")
+
+    if (!is.null(x$feature$class))
+      cat("    Class:      ", x$feature$class, "\n", sep = "")
+
+    if (!is.null(x$feature$id_type) && !is.na(x$feature$id_type))
       cat("    Row ID type:", x$feature$id_type, "\n")
-    if (!is.na(x$feature$column_type))
-      cat("    Col ID type:", x$feature$column_type, "\n")
+
+    if (!is.null(x$feature$rsid_type) && !is.na(x$feature$rsid_type))
+      cat("    Col ID type:", x$feature$rsid_type, "\n")
 
     if (!is.null(x$feature$sets)) {
+
       cat("    Feature sets:\n")
+
       for (i in seq_along(x$feature$sets$names)) {
-        cat("      - ",
-            x$feature$sets$names[i],
-            " (", x$feature$sets$sizes[i], ")\n",
-            sep = "")
+        cat(
+          "      - ",
+          x$feature$sets$names[i],
+          " (", x$feature$sets$sizes[i], ")\n",
+          sep = ""
+        )
       }
     }
   }
 
-  if (x$start$provided)
-    cat("  Start values: provided (", x$start$type, ")\n", sep = "")
+  ## ------------------------------------------------------------------
+  ## Starting values
+  ## ------------------------------------------------------------------
+
+  if (!is.null(x$start) && isTRUE(x$start$provided)) {
+    cat("\n  Start values: provided (", x$start$type, ")\n", sep = "")
+  }
 
   invisible(x)
 }
@@ -416,33 +497,71 @@ print.summary.vc <- function(x, ...) {
 #'
 #' @return An object of class "summary.varcomp".
 #' @export
+#' Summarize a collection of variance components
+#'
+#' Produce a structured summary of a varcomp object,
+#' including collection-level information and individual
+#' component summaries.
+#'
+#' @param object An object of class "varcomp".
+#' @param ... Unused.
+#'
+#' @return An object of class "summary.varcomp".
+#' @export
 summary.varcomp <- function(object, ...) {
 
   stopifnot(inherits(object, "varcomp"))
 
   comps <- object
-  comp_names <- names(comps)
+  n_comp <- length(comps)
 
-  ## ---- per-component summaries -----------------------------------------
-  summaries <- lapply(comps, summary.vc)
-  names(summaries) <- comp_names
+  ## ------------------------------------------------------------------
+  ## Variable structure
+  ## ------------------------------------------------------------------
 
-  ## ---- collection diagnostics -------------------------------------------
   variables <- vapply(comps, function(x) x$variable, character(1))
+  unique_vars <- unique(variables)
 
-  covariance_types <- vapply(
-    summaries,
-    function(x) x$covariance,
-    character(1)
-  )
+  var_table <- table(variables)
+
+  multi_vars <- names(var_table[var_table > 1])
+
+  ## ------------------------------------------------------------------
+  ## Covariance mechanisms used
+  ## ------------------------------------------------------------------
+
+  cov_types <- vapply(comps, function(x) {
+    if (!is.null(x$kernel)) {
+      "kernel"
+    } else if (!is.null(x$featureMatrix)) {
+      "feature"
+    } else if (identical(x$variable, "residual")) {
+      "residual"
+    } else {
+      "iid"
+    }
+  }, character(1))
+
+  cov_used <- unique(cov_types)
+
+  ## ------------------------------------------------------------------
+  ## Component summaries
+  ## ------------------------------------------------------------------
+
+  comp_summaries <- lapply(comps, summary.vc)
+  names(comp_summaries) <- names(comps)
+
+  ## ------------------------------------------------------------------
+  ## Build object
+  ## ------------------------------------------------------------------
 
   out <- list(
-    n_components      = length(comps),
-    component_names   = comp_names,
-    n_unique_variables = length(unique(variables)),
-    duplicated_variables = unique(variables[duplicated(variables)]),
-    covariance_types  = unique(covariance_types),
-    components        = summaries
+    n_components   = n_comp,
+    n_variables    = length(unique_vars),
+    variables      = unique_vars,
+    multiple_vars  = multi_vars,
+    covariance     = cov_used,
+    components     = comp_summaries
   )
 
   class(out) <- "summary.varcomp"
@@ -451,28 +570,33 @@ summary.varcomp <- function(object, ...) {
 
 
 #' @export
+#' @export
 print.summary.varcomp <- function(x, ...) {
 
   cat("Variance component collection summary\n")
-  cat("-------------------------------------\n")
-  cat("  Number of components: ", x$n_components, "\n")
-  cat("  Unique variables:     ", x$n_unique_variables, "\n")
+  cat("======================================\n\n")
 
-  if (length(x$duplicated_variables) > 0) {
-    cat("  Multiple components per variable:\n")
-    for (v in x$duplicated_variables) {
-      cat("    - ", v, "\n", sep = "")
+  cat("Number of components: ", x$n_components, "\n", sep = "")
+  cat("Unique variables:     ", x$n_variables, "\n", sep = "")
+
+  if (length(x$multiple_vars) > 0) {
+    cat("Multiple components per variable:\n")
+    for (v in x$multiple_vars) {
+      cat("  - ", v, "\n", sep = "")
     }
   }
 
-  cat("  Covariance mechanisms used: ",
-      paste(x$covariance_types, collapse = ", "), "\n")
+  cat("Covariance mechanisms used: ",
+      paste(x$covariance, collapse = ", "),
+      "\n\n", sep = "")
 
-  cat("\nComponents:\n")
+  cat("Components:\n")
 
-  for (nm in x$component_names) {
+  for (nm in names(x$components)) {
+
     cat("\n----------------------------------\n")
     cat("Component: ", nm, "\n", sep = "")
+
     print(x$components[[nm]])
   }
 

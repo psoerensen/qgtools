@@ -7,11 +7,13 @@
 \method{summary}{vc}(object, ...)
 }
 \arguments{
-\item{object}{An object of class \code{"vc"}.}
+\item{object}{An object of class "vc".}
 
 \item{...}{Unused.}
 }
 \value{
+A named list summarizing the variance component.
+
 A named list summarizing the variance component.
 }
 \description{

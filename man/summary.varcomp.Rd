@@ -13,6 +13,8 @@
 }
 \value{
 An object of class "summary.varcomp".
+
+An object of class "summary.varcomp".
 }
 \description{
 Produce a structured summary of a varcomp object,

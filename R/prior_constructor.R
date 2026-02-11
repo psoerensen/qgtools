@@ -174,14 +174,29 @@ summary.prior <- function(object, ...) {
   }
 
   ## ---- feature-backed --------------------------------------------------
+  ## ---- feature-backed --------------------------------------------------
   if (cov_type == "feature") {
 
+    ## Defensive extraction of row ID type
+    id_type <- NA_character_
+    if (!is.null(object$featureMatrix$ids) &&
+        is.list(object$featureMatrix$ids) &&
+        !is.null(object$featureMatrix$ids$type)) {
+      id_type <- object$featureMatrix$ids$type
+    }
+
+    ## Defensive extraction of column ID type
+    column_type <- NA_character_
+    if (!is.null(object$featureMatrix$rsids) &&
+        is.list(object$featureMatrix$rsids) &&
+        !is.null(object$featureMatrix$rsids$type)) {
+      column_type <- object$featureMatrix$rsids$type
+    }
+
     out$feature <- list(
-      class      = class(object$featureMatrix)[1],
-      id_type    = if (!is.null(object$featureMatrix$ids$type))
-        object$featureMatrix$ids$type else NA_character_,
-      column_type = if (!is.null(object$featureMatrix$rsids$type))
-        object$featureMatrix$rsids$type else NA_character_
+      class       = class(object$featureMatrix)[1],
+      id_type     = id_type,
+      column_type = column_type
     )
 
     if (!is.null(object$featureSets)) {
