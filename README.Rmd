@@ -16,8 +16,7 @@ qgtools separates model specification into independent, orthogonal layers.
 Each layer answers a distinct modeling question and can be modified without affecting the others.
 
 1. **Formulas — *what* enters the model**  
-   Per-trait formulas define responses, fixed effects, and named random or latent effects  
-   (e.g. `(1 | id)`, `(1 | marker)`).  
+   Per-trait formulas define responses, fixed effects, and named random or latent effects (e.g. `(1 | id)`).  
    Formulas describe *which* effects exist, but not how their covariance is modeled.
 
 2. **Kernels and features — *how* effects act on the data**  
@@ -87,7 +86,7 @@ and **estimation**.
 ## Observational data provide phenotypes and covariates referenced
 ## in the model formulas.
 
-data <- makeDatalist(
+data <- makeDataSource(
   source = "data.txt",
   format = "CSV"
 )
@@ -108,17 +107,20 @@ formulas <- list(
 ## The pedigree kernel defines how covariance is induced
 ## across levels of the 'id' effect.
 
-PED <- makePEDlist(fnPED = "pedigree.txt")
+PED <- makePEDlist(fnPED = "pedigree.txt", 
+                   method="S-D-NonInbred")
 
 vcs <- list(
   animal = vc(
     variable = "id",
     traits   = "BW",
-    kernel   = PED
+    kernel   = PED,
+    start   = 1.0
   ),
   residual = vc(
     variable = "residual",
-    traits   = "BW"
+    traits   = "BW",
+    start   = 1.0
   )
 )
 
@@ -228,11 +230,13 @@ vcs <- list(
   animal = vc(
     variable = "id",
     traits   = "BW",
-    kernel   = PED
+    kernel   = PED,
+    start   = 1.0
   ),
   residual = vc(
     variable = "residual",
-    traits   = "BW"
+    traits   = "BW",
+    start   = 1.0
   )
 )
 
@@ -249,8 +253,8 @@ model = Model(
         "BW": "BW ~ sex + reps + (1 | id)"
     },
     vcs=[
-        vc(variable="id", traits=["BW"], kernel=PED),
-        vc(variable="residual", traits=["BW"])
+        vc(variable="id", traits=["BW"], kernel=PED, start=[1.0]),
+        vc(variable="residual", traits=["BW"], start=[1.0])
     ]
 )
 
@@ -278,7 +282,7 @@ Data may be provided either as an in-memory object or as a disk-backed source.
 
 ```{r, eval = FALSE}
 ## Observational data (phenotypes and covariates)
-data <- makeDatalist(
+data <- makeDataSource(
   source = "data.txt",
   format = "CSV"
 )
@@ -321,14 +325,14 @@ Feature matrices define explicit linear predictors with potentially very large
 numbers of coefficients. Typical examples include genotype matrices,
 transcriptomic measurements, or other omics data.
 
-Feature data are often stored on disk and accessed lazily by the backend.
+Feature data are often stored on disk and accessed lazily by the backend. Here we illustrate this using PLINK based genotype files:
 
 ```{r, eval = FALSE}
 ## Genotype feature matrix (e.g. PLINK BED/BIM/FAM)
-M <- featureMatrix(
-  bedfiles = "chr.bed",
-  bimfiles = "chr.bim",
-  famfiles = "chr.fam"
+featureMatrix <- makeGlist(
+  bedfiles = c("chr1.bed","chr2.bed"),
+  bimfiles = c("chr1.bim","chr2.bim"),
+  famfiles = c("chr1.fam","chr2.fam")
 )
 ```
 
@@ -357,7 +361,7 @@ Marker-level effects differ fundamentally from classical random effects:
 - Explicit covariance matrices (e.g. GRMs) are usually avoided for scalability
 
 In **qgtools**, marker effects are treated as **feature-based model components**.
-They are declared in the model formula as a named effect (e.g. `(1 | marker)`),
+They are declared in the model formula as a named effect (e.g. `(1 | id)`),
 and linked to genotype data via a `featureMatrix()`.
 
 Regularization and covariance structure are then specified through
@@ -393,8 +397,8 @@ and the prior, enabling scalable multi-component and multi-trait models.
 ## modeled through a feature matrix.
 
 formulas <- list(
-  BW = BW ~ sex + reps + (1 | dam) + (1 | animal) + (1 | marker),
-  Gl = Gl ~ sex + reps + (1 | dam) + (1 | animal) + (1 | marker)
+  BW = BW ~ sex + reps + (1 | dam) + (1 | animal),
+  Gl = Gl ~ sex + reps + (1 | dam) + (1 | animal)
 )
 
 ## ------------------------------------------------------------------
@@ -402,7 +406,11 @@ formulas <- list(
 ## ------------------------------------------------------------------
 ## Pedigree effects are naturally expressed via kernels.
 
-PED <- makePEDlist(fnPED = "pedigree.txt")
+## Pedigree-based kernel for additive genetic effects
+PED <- makePEDlist(
+  fnPED  = "pedigree.txt",
+  method = "S-D-NonInbred"
+)
 
 
 ## ------------------------------------------------------------------
@@ -410,13 +418,14 @@ PED <- makePEDlist(fnPED = "pedigree.txt")
 ## ------------------------------------------------------------------
 ## Marker effects are defined through a feature matrix
 
-M <- featureMatrix(
-  bedfiles = "chr.bed",
-  bimfiles = "chr.bim",
-  famfiles = "chr.fam"
+## Genotype feature matrix (e.g. PLINK BED/BIM/FAM)
+featureMatrix <- makeGlist(
+  bedfiles = c("chr1.bed","chr2.bed"),
+  bimfiles = c("chr1.bim","chr2.bim"),
+  famfiles = c("chr1.fam","chr2.fam")
 )
 
-## Optional grouping of markers into multiple variance components
+## Optional grouping of markers used for multiple variance components
 featureSets <- list(
   set1 = 1:1000,
   set2 = 1001:2000
@@ -445,9 +454,9 @@ priors <- list(
   ),
 
   marker = prior(
-    variable     = "marker",
+    variable     = "animal",
     traits       = c("BW", "Gl"),
-    features     = M,
+    featureMatrix     = featureMatrix,
     featureSets  = featureSets,
     distribution = bayesC(
       pi     = beta(95, 5),
@@ -479,8 +488,6 @@ fit_bayes <- gfit(
   priors   = priors,
   task     = "bayes"
 )
-
-
 ```
 
 The same model specification can be estimated using a marker BLUP

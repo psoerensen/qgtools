@@ -19,17 +19,6 @@ data <- makeDataSource(
   )
 )
 
-## ------------------------------------------------------------
-## Data
-## ------------------------------------------------------------
-data <- makeDataSource(
-  source = "pheno.csv",
-  id     = "animal",
-  roles  = list(
-    BW     = "trait",
-    animal = "id"
-  )
-)
 
 ## ------------------------------------------------------------
 ## Model
@@ -54,7 +43,7 @@ vc_animal <- vc(
 
 vcs <- list(
   animal   = vc_animal,
-  residual = vc("residual", "BW")
+  residual = vc("residual", "BW", start=1)
 )
 
 ## ------------------------------------------------------------
