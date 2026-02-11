@@ -3938,8 +3938,7 @@ vertical-align: -.125em;
 Each layer answers a distinct modeling question and can be modified without affecting the others.</p>
 <ol type="1">
 <li><p><strong>Formulas — <em>what</em> enters the model</strong><br>
-Per-trait formulas define responses, fixed effects, and named random or latent effects<br>
-(e.g. <code>(1 | id)</code>, <code>(1 | marker)</code>).<br>
+Per-trait formulas define responses, fixed effects, and named random or latent effects (e.g. <code>(1 | id)</code>).<br>
 Formulas describe <em>which</em> effects exist, but not how their covariance is modeled.</p></li>
 <li><p><strong>Kernels and features — <em>how</em> effects act on the data</strong><br>
 qgtools supports two complementary mechanisms:</p>
@@ -4000,7 +3999,7 @@ without changing formulas, kernels, or feature definitions.</li>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="do">## Observational data provide phenotypes and covariates referenced</span></span>
 <span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="do">## in the model formulas.</span></span>
 <span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>data <span class="ot">&lt;-</span> <span class="fu">makeDatalist</span>(</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>data <span class="ot">&lt;-</span> <span class="fu">makeDataSource</span>(</span>
 <span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">source =</span> <span class="st">&quot;data.txt&quot;</span>,</span>
 <span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">format =</span> <span class="st">&quot;CSV&quot;</span></span>
 <span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>)</span>
@@ -4021,32 +4020,35 @@ without changing formulas, kernels, or feature definitions.</li>
 <span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a><span class="do">## The pedigree kernel defines how covariance is induced</span></span>
 <span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a><span class="do">## across levels of the &#39;id&#39; effect.</span></span>
 <span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>PED <span class="ot">&lt;-</span> <span class="fu">makePEDlist</span>(<span class="at">fnPED =</span> <span class="st">&quot;pedigree.txt&quot;</span>)</span>
-<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a>vcs <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
-<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>  <span class="at">animal =</span> <span class="fu">vc</span>(</span>
-<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a>    <span class="at">variable =</span> <span class="st">&quot;id&quot;</span>,</span>
-<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a>    <span class="at">traits   =</span> <span class="st">&quot;BW&quot;</span>,</span>
-<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a>    <span class="at">kernel   =</span> PED</span>
-<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a>  ),</span>
-<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a>  <span class="at">residual =</span> <span class="fu">vc</span>(</span>
-<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a>    <span class="at">variable =</span> <span class="st">&quot;residual&quot;</span>,</span>
-<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a>    <span class="at">traits   =</span> <span class="st">&quot;BW&quot;</span></span>
-<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a><span class="do">## ---------------------------------------------------------------</span></span>
-<span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a><span class="do">## Model fitting</span></span>
-<span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a><span class="do">## ---------------------------------------------------------------</span></span>
-<span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a><span class="do">## The estimation task determines how the model is fit,</span></span>
-<span id="cb1-46"><a href="#cb1-46" aria-hidden="true" tabindex="-1"></a><span class="do">## without changing the model structure.</span></span>
-<span id="cb1-47"><a href="#cb1-47" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-48"><a href="#cb1-48" aria-hidden="true" tabindex="-1"></a>fit <span class="ot">&lt;-</span> <span class="fu">gfit</span>(</span>
-<span id="cb1-49"><a href="#cb1-49" aria-hidden="true" tabindex="-1"></a>  <span class="at">formulas =</span> formulas,</span>
-<span id="cb1-50"><a href="#cb1-50" aria-hidden="true" tabindex="-1"></a>  <span class="at">data     =</span> data,</span>
-<span id="cb1-51"><a href="#cb1-51" aria-hidden="true" tabindex="-1"></a>  <span class="at">vc       =</span> vcs,</span>
-<span id="cb1-52"><a href="#cb1-52" aria-hidden="true" tabindex="-1"></a>  <span class="at">task     =</span> <span class="st">&quot;reml&quot;</span></span>
-<span id="cb1-53"><a href="#cb1-53" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>PED <span class="ot">&lt;-</span> <span class="fu">makePEDlist</span>(<span class="at">fnPED =</span> <span class="st">&quot;pedigree.txt&quot;</span>, </span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a>                   <span class="at">method=</span><span class="st">&quot;S-D-NonInbred&quot;</span>)</span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>vcs <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a>  <span class="at">animal =</span> <span class="fu">vc</span>(</span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a>    <span class="at">variable =</span> <span class="st">&quot;id&quot;</span>,</span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a>    <span class="at">traits   =</span> <span class="st">&quot;BW&quot;</span>,</span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a>    <span class="at">kernel   =</span> PED,</span>
+<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a>    <span class="at">start   =</span> <span class="fl">1.0</span></span>
+<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a>  ),</span>
+<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a>  <span class="at">residual =</span> <span class="fu">vc</span>(</span>
+<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a>    <span class="at">variable =</span> <span class="st">&quot;residual&quot;</span>,</span>
+<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a>    <span class="at">traits   =</span> <span class="st">&quot;BW&quot;</span>,</span>
+<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a>    <span class="at">start   =</span> <span class="fl">1.0</span></span>
+<span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a><span class="do">## ---------------------------------------------------------------</span></span>
+<span id="cb1-46"><a href="#cb1-46" aria-hidden="true" tabindex="-1"></a><span class="do">## Model fitting</span></span>
+<span id="cb1-47"><a href="#cb1-47" aria-hidden="true" tabindex="-1"></a><span class="do">## ---------------------------------------------------------------</span></span>
+<span id="cb1-48"><a href="#cb1-48" aria-hidden="true" tabindex="-1"></a><span class="do">## The estimation task determines how the model is fit,</span></span>
+<span id="cb1-49"><a href="#cb1-49" aria-hidden="true" tabindex="-1"></a><span class="do">## without changing the model structure.</span></span>
+<span id="cb1-50"><a href="#cb1-50" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-51"><a href="#cb1-51" aria-hidden="true" tabindex="-1"></a>fit <span class="ot">&lt;-</span> <span class="fu">gfit</span>(</span>
+<span id="cb1-52"><a href="#cb1-52" aria-hidden="true" tabindex="-1"></a>  <span class="at">formulas =</span> formulas,</span>
+<span id="cb1-53"><a href="#cb1-53" aria-hidden="true" tabindex="-1"></a>  <span class="at">data     =</span> data,</span>
+<span id="cb1-54"><a href="#cb1-54" aria-hidden="true" tabindex="-1"></a>  <span class="at">vc       =</span> vcs,</span>
+<span id="cb1-55"><a href="#cb1-55" aria-hidden="true" tabindex="-1"></a>  <span class="at">task     =</span> <span class="st">&quot;reml&quot;</span></span>
+<span id="cb1-56"><a href="#cb1-56" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>The same model structure can be estimated as a Bayesian model by replacing <em>vc()</em> with <em>prior()</em> and setting <em>task=“bayes”</em>, without changing the formulas, kernels or data.</p>
 </section>
@@ -4100,33 +4102,35 @@ This design ensures consistent results across interfaces and enables flexible de
 <span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">animal =</span> <span class="fu">vc</span>(</span>
 <span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">variable =</span> <span class="st">&quot;id&quot;</span>,</span>
 <span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">traits   =</span> <span class="st">&quot;BW&quot;</span>,</span>
-<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">kernel   =</span> PED</span>
-<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>  ),</span>
-<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>  <span class="at">residual =</span> <span class="fu">vc</span>(</span>
-<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>    <span class="at">variable =</span> <span class="st">&quot;residual&quot;</span>,</span>
-<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>    <span class="at">traits   =</span> <span class="st">&quot;BW&quot;</span></span>
-<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a>fit <span class="ot">&lt;-</span> <span class="fu">gfit</span>(formulas, data, vcs, <span class="at">task =</span> <span class="st">&quot;reml&quot;</span>)</span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">kernel   =</span> PED,</span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>    <span class="at">start   =</span> <span class="fl">1.0</span></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>  ),</span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>  <span class="at">residual =</span> <span class="fu">vc</span>(</span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>    <span class="at">variable =</span> <span class="st">&quot;residual&quot;</span>,</span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a>    <span class="at">traits   =</span> <span class="st">&quot;BW&quot;</span>,</span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>    <span class="at">start   =</span> <span class="fl">1.0</span></span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a>)</span>
 <span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a><span class="co"># ---------------------------------------------------------------</span></span>
-<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a><span class="co"># Python interface</span></span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a>fit <span class="ot">&lt;-</span> <span class="fu">gfit</span>(formulas, data, vcs, <span class="at">task =</span> <span class="st">&quot;reml&quot;</span>)</span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a><span class="co"># ---------------------------------------------------------------</span></span>
-<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a><span class="co"># The same model specification expressed using Python syntax.</span></span>
-<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a><span class="co"># The underlying model and backend execution are identical.</span></span>
-<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a>model <span class="ot">=</span> <span class="fu">Model</span>(</span>
-<span id="cb2-32"><a href="#cb2-32" aria-hidden="true" tabindex="-1"></a>    <span class="at">formulas=</span>{</span>
-<span id="cb2-33"><a href="#cb2-33" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;BW&quot;</span><span class="sc">:</span> <span class="st">&quot;BW ~ sex + reps + (1 | id)&quot;</span></span>
-<span id="cb2-34"><a href="#cb2-34" aria-hidden="true" tabindex="-1"></a>    },</span>
-<span id="cb2-35"><a href="#cb2-35" aria-hidden="true" tabindex="-1"></a>    <span class="at">vcs=</span>[</span>
-<span id="cb2-36"><a href="#cb2-36" aria-hidden="true" tabindex="-1"></a>        <span class="fu">vc</span>(<span class="at">variable=</span><span class="st">&quot;id&quot;</span>, <span class="at">traits=</span>[<span class="st">&quot;BW&quot;</span>], <span class="at">kernel=</span>PED),</span>
-<span id="cb2-37"><a href="#cb2-37" aria-hidden="true" tabindex="-1"></a>        <span class="fu">vc</span>(<span class="at">variable=</span><span class="st">&quot;residual&quot;</span>, <span class="at">traits=</span>[<span class="st">&quot;BW&quot;</span>])</span>
-<span id="cb2-38"><a href="#cb2-38" aria-hidden="true" tabindex="-1"></a>    ]</span>
-<span id="cb2-39"><a href="#cb2-39" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb2-40"><a href="#cb2-40" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-41"><a href="#cb2-41" aria-hidden="true" tabindex="-1"></a>fit <span class="ot">=</span> <span class="fu">gfit</span>(model, data, <span class="at">task=</span><span class="st">&quot;reml&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a><span class="co"># Python interface</span></span>
+<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a><span class="co"># ---------------------------------------------------------------</span></span>
+<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a><span class="co"># The same model specification expressed using Python syntax.</span></span>
+<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a><span class="co"># The underlying model and backend execution are identical.</span></span>
+<span id="cb2-32"><a href="#cb2-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-33"><a href="#cb2-33" aria-hidden="true" tabindex="-1"></a>model <span class="ot">=</span> <span class="fu">Model</span>(</span>
+<span id="cb2-34"><a href="#cb2-34" aria-hidden="true" tabindex="-1"></a>    <span class="at">formulas=</span>{</span>
+<span id="cb2-35"><a href="#cb2-35" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;BW&quot;</span><span class="sc">:</span> <span class="st">&quot;BW ~ sex + reps + (1 | id)&quot;</span></span>
+<span id="cb2-36"><a href="#cb2-36" aria-hidden="true" tabindex="-1"></a>    },</span>
+<span id="cb2-37"><a href="#cb2-37" aria-hidden="true" tabindex="-1"></a>    <span class="at">vcs=</span>[</span>
+<span id="cb2-38"><a href="#cb2-38" aria-hidden="true" tabindex="-1"></a>        <span class="fu">vc</span>(<span class="at">variable=</span><span class="st">&quot;id&quot;</span>, <span class="at">traits=</span>[<span class="st">&quot;BW&quot;</span>], <span class="at">kernel=</span>PED, <span class="at">start=</span>[<span class="fl">1.0</span>]),</span>
+<span id="cb2-39"><a href="#cb2-39" aria-hidden="true" tabindex="-1"></a>        <span class="fu">vc</span>(<span class="at">variable=</span><span class="st">&quot;residual&quot;</span>, <span class="at">traits=</span>[<span class="st">&quot;BW&quot;</span>], <span class="at">start=</span>[<span class="fl">1.0</span>])</span>
+<span id="cb2-40"><a href="#cb2-40" aria-hidden="true" tabindex="-1"></a>    ]</span>
+<span id="cb2-41"><a href="#cb2-41" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb2-42"><a href="#cb2-42" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-43"><a href="#cb2-43" aria-hidden="true" tabindex="-1"></a>fit <span class="ot">=</span> <span class="fu">gfit</span>(model, data, <span class="at">task=</span><span class="st">&quot;reml&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Both interfaces construct the same internal model representation and invoke the same computational backend. Differences between R and Python are limited to syntax and user-facing language conventions.</p>
 </section>
@@ -4139,7 +4143,7 @@ This design ensures consistent results across interfaces and enables flexible de
 <p>Data may be provided either as an in-memory object or as a disk-backed source.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="do">## Observational data (phenotypes and covariates)</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>data <span class="ot">&lt;-</span> <span class="fu">makeDatalist</span>(</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>data <span class="ot">&lt;-</span> <span class="fu">makeDataSource</span>(</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">source =</span> <span class="st">&quot;data.txt&quot;</span>,</span>
 <span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">format =</span> <span class="st">&quot;CSV&quot;</span></span>
 <span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -4169,13 +4173,13 @@ This design ensures consistent results across interfaces and enables flexible de
 <section id="high-dimensional-predictors-feature-matrices" class="level3">
 <h3 class="anchored" data-anchor-id="high-dimensional-predictors-feature-matrices">High-dimensional predictors: feature matrices</h3>
 <p>Feature matrices define explicit linear predictors with potentially very large numbers of coefficients. Typical examples include genotype matrices, transcriptomic measurements, or other omics data.</p>
-<p>Feature data are often stored on disk and accessed lazily by the backend.</p>
+<p>Feature data are often stored on disk and accessed lazily by the backend. Here we illustrate this using PLINK based genotype files:</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="do">## Genotype feature matrix (e.g. PLINK BED/BIM/FAM)</span></span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>M <span class="ot">&lt;-</span> <span class="fu">featureMatrix</span>(</span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">bedfiles =</span> <span class="st">&quot;chr.bed&quot;</span>,</span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">bimfiles =</span> <span class="st">&quot;chr.bim&quot;</span>,</span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">famfiles =</span> <span class="st">&quot;chr.fam&quot;</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>featureMatrix <span class="ot">&lt;-</span> <span class="fu">makeGlist</span>(</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">bedfiles =</span> <span class="fu">c</span>(<span class="st">&quot;chr1.bed&quot;</span>,<span class="st">&quot;chr2.bed&quot;</span>),</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">bimfiles =</span> <span class="fu">c</span>(<span class="st">&quot;chr1.bim&quot;</span>,<span class="st">&quot;chr2.bim&quot;</span>),</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">famfiles =</span> <span class="fu">c</span>(<span class="st">&quot;chr1.fam&quot;</span>,<span class="st">&quot;chr2.fam&quot;</span>)</span>
 <span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Optional feature groupings can be supplied to define multiple variance components or prior structures over subsets of features.</p>
@@ -4195,7 +4199,7 @@ This design ensures consistent results across interfaces and enables flexible de
 <li>Covariance is induced <strong>implicitly</strong> through the feature matrix (e.g. genotypes), linkage disequilibrium, and the chosen prior</li>
 <li>Explicit covariance matrices (e.g. GRMs) are usually avoided for scalability</li>
 </ul>
-<p>In <strong>qgtools</strong>, marker effects are treated as <strong>feature-based model components</strong>. They are declared in the model formula as a named effect (e.g. <code>(1 | marker)</code>), and linked to genotype data via a <code>featureMatrix()</code>.</p>
+<p>In <strong>qgtools</strong>, marker effects are treated as <strong>feature-based model components</strong>. They are declared in the model formula as a named effect (e.g. <code>(1 | id)</code>), and linked to genotype data via a <code>featureMatrix()</code>.</p>
 <p>Regularization and covariance structure are then specified through <strong>marker-level priors</strong>, such as <code>bayesC()</code>, optionally using <code>featureSets</code> to define multiple variance components over disjoint (or annotated) subsets of markers.</p>
 <p>This approach mirrors how marker effects are handled in software such as BGLR and BayesR, while preserving a clear separation between:</p>
 <ul>
@@ -4220,8 +4224,8 @@ This design ensures consistent results across interfaces and enables flexible de
 <span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a><span class="do">## modeled through a feature matrix.</span></span>
 <span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>formulas <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
-<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">BW =</span> BW <span class="sc">~</span> sex <span class="sc">+</span> reps <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">|</span> dam) <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">|</span> animal) <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">|</span> marker),</span>
-<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">Gl =</span> Gl <span class="sc">~</span> sex <span class="sc">+</span> reps <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">|</span> dam) <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">|</span> animal) <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">|</span> marker)</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">BW =</span> BW <span class="sc">~</span> sex <span class="sc">+</span> reps <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">|</span> dam) <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">|</span> animal),</span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">Gl =</span> Gl <span class="sc">~</span> sex <span class="sc">+</span> reps <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">|</span> dam) <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">|</span> animal)</span>
 <span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>)</span>
 <span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a><span class="do">## ------------------------------------------------------------------</span></span>
@@ -4229,83 +4233,88 @@ This design ensures consistent results across interfaces and enables flexible de
 <span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a><span class="do">## ------------------------------------------------------------------</span></span>
 <span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a><span class="do">## Pedigree effects are naturally expressed via kernels.</span></span>
 <span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a>PED <span class="ot">&lt;-</span> <span class="fu">makePEDlist</span>(<span class="at">fnPED =</span> <span class="st">&quot;pedigree.txt&quot;</span>)</span>
-<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a><span class="do">## ------------------------------------------------------------------</span></span>
-<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a><span class="do">## Feature-based effect: markers (high-dimensional predictors)</span></span>
-<span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a><span class="do">## ------------------------------------------------------------------</span></span>
-<span id="cb8-26"><a href="#cb8-26" aria-hidden="true" tabindex="-1"></a><span class="do">## Marker effects are defined through a feature matrix</span></span>
-<span id="cb8-27"><a href="#cb8-27" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-28"><a href="#cb8-28" aria-hidden="true" tabindex="-1"></a>M <span class="ot">&lt;-</span> <span class="fu">featureMatrix</span>(</span>
-<span id="cb8-29"><a href="#cb8-29" aria-hidden="true" tabindex="-1"></a>  <span class="at">bedfiles =</span> <span class="st">&quot;chr.bed&quot;</span>,</span>
-<span id="cb8-30"><a href="#cb8-30" aria-hidden="true" tabindex="-1"></a>  <span class="at">bimfiles =</span> <span class="st">&quot;chr.bim&quot;</span>,</span>
-<span id="cb8-31"><a href="#cb8-31" aria-hidden="true" tabindex="-1"></a>  <span class="at">famfiles =</span> <span class="st">&quot;chr.fam&quot;</span></span>
-<span id="cb8-32"><a href="#cb8-32" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb8-33"><a href="#cb8-33" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-34"><a href="#cb8-34" aria-hidden="true" tabindex="-1"></a><span class="do">## Optional grouping of markers into multiple variance components</span></span>
-<span id="cb8-35"><a href="#cb8-35" aria-hidden="true" tabindex="-1"></a>featureSets <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
-<span id="cb8-36"><a href="#cb8-36" aria-hidden="true" tabindex="-1"></a>  <span class="at">set1 =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">1000</span>,</span>
-<span id="cb8-37"><a href="#cb8-37" aria-hidden="true" tabindex="-1"></a>  <span class="at">set2 =</span> <span class="dv">1001</span><span class="sc">:</span><span class="dv">2000</span></span>
-<span id="cb8-38"><a href="#cb8-38" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb8-39"><a href="#cb8-39" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-40"><a href="#cb8-40" aria-hidden="true" tabindex="-1"></a><span class="do">## ------------------------------------------------------------------</span></span>
-<span id="cb8-41"><a href="#cb8-41" aria-hidden="true" tabindex="-1"></a><span class="do">## Bayesian prior specification</span></span>
-<span id="cb8-42"><a href="#cb8-42" aria-hidden="true" tabindex="-1"></a><span class="do">## ------------------------------------------------------------------</span></span>
-<span id="cb8-43"><a href="#cb8-43" aria-hidden="true" tabindex="-1"></a><span class="do">## Priors replace variance components in Bayesian models.</span></span>
-<span id="cb8-44"><a href="#cb8-44" aria-hidden="true" tabindex="-1"></a><span class="do">## Each prior corresponds to a named model component.</span></span>
-<span id="cb8-45"><a href="#cb8-45" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-46"><a href="#cb8-46" aria-hidden="true" tabindex="-1"></a>priors <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
-<span id="cb8-47"><a href="#cb8-47" aria-hidden="true" tabindex="-1"></a>  <span class="at">dam =</span> <span class="fu">prior</span>(</span>
-<span id="cb8-48"><a href="#cb8-48" aria-hidden="true" tabindex="-1"></a>    <span class="at">variable     =</span> <span class="st">&quot;dam&quot;</span>,</span>
-<span id="cb8-49"><a href="#cb8-49" aria-hidden="true" tabindex="-1"></a>    <span class="at">traits       =</span> <span class="fu">c</span>(<span class="st">&quot;BW&quot;</span>, <span class="st">&quot;Gl&quot;</span>),</span>
-<span id="cb8-50"><a href="#cb8-50" aria-hidden="true" tabindex="-1"></a>    <span class="at">distribution =</span> <span class="fu">iw</span>(<span class="at">df =</span> <span class="dv">4</span>, <span class="at">S =</span> <span class="fu">diag</span>(<span class="dv">1</span>, <span class="dv">2</span>)),</span>
-<span id="cb8-51"><a href="#cb8-51" aria-hidden="true" tabindex="-1"></a>    <span class="at">start        =</span> <span class="fu">diag</span>(<span class="dv">1</span>, <span class="dv">2</span>)</span>
-<span id="cb8-52"><a href="#cb8-52" aria-hidden="true" tabindex="-1"></a>  ),</span>
-<span id="cb8-53"><a href="#cb8-53" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-54"><a href="#cb8-54" aria-hidden="true" tabindex="-1"></a>  <span class="at">animal =</span> <span class="fu">prior</span>(</span>
-<span id="cb8-55"><a href="#cb8-55" aria-hidden="true" tabindex="-1"></a>    <span class="at">variable     =</span> <span class="st">&quot;animal&quot;</span>,</span>
-<span id="cb8-56"><a href="#cb8-56" aria-hidden="true" tabindex="-1"></a>    <span class="at">traits       =</span> <span class="fu">c</span>(<span class="st">&quot;BW&quot;</span>, <span class="st">&quot;Gl&quot;</span>),</span>
-<span id="cb8-57"><a href="#cb8-57" aria-hidden="true" tabindex="-1"></a>    <span class="at">kernel       =</span> PED,</span>
-<span id="cb8-58"><a href="#cb8-58" aria-hidden="true" tabindex="-1"></a>    <span class="at">distribution =</span> <span class="fu">iw</span>(<span class="at">df =</span> <span class="dv">4</span>, <span class="at">S =</span> <span class="fu">diag</span>(<span class="dv">1</span>, <span class="dv">2</span>)),</span>
-<span id="cb8-59"><a href="#cb8-59" aria-hidden="true" tabindex="-1"></a>    <span class="at">start        =</span> <span class="fu">diag</span>(<span class="dv">1</span>, <span class="dv">2</span>)</span>
-<span id="cb8-60"><a href="#cb8-60" aria-hidden="true" tabindex="-1"></a>  ),</span>
-<span id="cb8-61"><a href="#cb8-61" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-62"><a href="#cb8-62" aria-hidden="true" tabindex="-1"></a>  <span class="at">marker =</span> <span class="fu">prior</span>(</span>
-<span id="cb8-63"><a href="#cb8-63" aria-hidden="true" tabindex="-1"></a>    <span class="at">variable     =</span> <span class="st">&quot;marker&quot;</span>,</span>
-<span id="cb8-64"><a href="#cb8-64" aria-hidden="true" tabindex="-1"></a>    <span class="at">traits       =</span> <span class="fu">c</span>(<span class="st">&quot;BW&quot;</span>, <span class="st">&quot;Gl&quot;</span>),</span>
-<span id="cb8-65"><a href="#cb8-65" aria-hidden="true" tabindex="-1"></a>    <span class="at">features     =</span> M,</span>
-<span id="cb8-66"><a href="#cb8-66" aria-hidden="true" tabindex="-1"></a>    <span class="at">featureSets  =</span> featureSets,</span>
-<span id="cb8-67"><a href="#cb8-67" aria-hidden="true" tabindex="-1"></a>    <span class="at">distribution =</span> <span class="fu">bayesC</span>(</span>
-<span id="cb8-68"><a href="#cb8-68" aria-hidden="true" tabindex="-1"></a>      <span class="at">pi     =</span> <span class="fu">beta</span>(<span class="dv">95</span>, <span class="dv">5</span>),</span>
-<span id="cb8-69"><a href="#cb8-69" aria-hidden="true" tabindex="-1"></a>      <span class="at">sigma2 =</span> <span class="fu">invchisq</span>(<span class="at">df =</span> <span class="dv">4</span>, <span class="at">scale =</span> <span class="fl">0.001</span>),</span>
-<span id="cb8-70"><a href="#cb8-70" aria-hidden="true" tabindex="-1"></a>      <span class="at">start  =</span> <span class="fu">list</span>(</span>
-<span id="cb8-71"><a href="#cb8-71" aria-hidden="true" tabindex="-1"></a>        <span class="at">set1 =</span> <span class="fu">diag</span>(<span class="fl">0.005</span>, <span class="dv">2</span>),</span>
-<span id="cb8-72"><a href="#cb8-72" aria-hidden="true" tabindex="-1"></a>        <span class="at">set2 =</span> <span class="fu">diag</span>(<span class="fl">0.001</span>, <span class="dv">2</span>)</span>
-<span id="cb8-73"><a href="#cb8-73" aria-hidden="true" tabindex="-1"></a>      )</span>
-<span id="cb8-74"><a href="#cb8-74" aria-hidden="true" tabindex="-1"></a>    )</span>
-<span id="cb8-75"><a href="#cb8-75" aria-hidden="true" tabindex="-1"></a>  ),</span>
-<span id="cb8-76"><a href="#cb8-76" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-77"><a href="#cb8-77" aria-hidden="true" tabindex="-1"></a>  <span class="at">residual =</span> <span class="fu">prior</span>(</span>
-<span id="cb8-78"><a href="#cb8-78" aria-hidden="true" tabindex="-1"></a>    <span class="at">variable     =</span> <span class="st">&quot;residual&quot;</span>,</span>
-<span id="cb8-79"><a href="#cb8-79" aria-hidden="true" tabindex="-1"></a>    <span class="at">traits       =</span> <span class="fu">c</span>(<span class="st">&quot;BW&quot;</span>, <span class="st">&quot;Gl&quot;</span>),</span>
-<span id="cb8-80"><a href="#cb8-80" aria-hidden="true" tabindex="-1"></a>    <span class="at">distribution =</span> <span class="fu">iw</span>(<span class="at">df =</span> <span class="dv">4</span>, <span class="at">S =</span> <span class="fu">diag</span>(<span class="dv">1</span>, <span class="dv">2</span>)),</span>
-<span id="cb8-81"><a href="#cb8-81" aria-hidden="true" tabindex="-1"></a>    <span class="at">start        =</span> <span class="fu">diag</span>(<span class="dv">1</span>, <span class="dv">2</span>)</span>
-<span id="cb8-82"><a href="#cb8-82" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb8-83"><a href="#cb8-83" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb8-84"><a href="#cb8-84" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-85"><a href="#cb8-85" aria-hidden="true" tabindex="-1"></a><span class="do">## ------------------------------------------------------------------</span></span>
-<span id="cb8-86"><a href="#cb8-86" aria-hidden="true" tabindex="-1"></a><span class="do">## Model fitting</span></span>
-<span id="cb8-87"><a href="#cb8-87" aria-hidden="true" tabindex="-1"></a><span class="do">## ------------------------------------------------------------------</span></span>
-<span id="cb8-88"><a href="#cb8-88" aria-hidden="true" tabindex="-1"></a><span class="do">## The estimation task determines how the model is fit,</span></span>
-<span id="cb8-89"><a href="#cb8-89" aria-hidden="true" tabindex="-1"></a><span class="do">## without changing the model structure.</span></span>
-<span id="cb8-90"><a href="#cb8-90" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-91"><a href="#cb8-91" aria-hidden="true" tabindex="-1"></a>fit_bayes <span class="ot">&lt;-</span> <span class="fu">gfit</span>(</span>
-<span id="cb8-92"><a href="#cb8-92" aria-hidden="true" tabindex="-1"></a>  <span class="at">formulas =</span> formulas,</span>
-<span id="cb8-93"><a href="#cb8-93" aria-hidden="true" tabindex="-1"></a>  <span class="at">data     =</span> data,</span>
-<span id="cb8-94"><a href="#cb8-94" aria-hidden="true" tabindex="-1"></a>  <span class="at">priors   =</span> priors,</span>
-<span id="cb8-95"><a href="#cb8-95" aria-hidden="true" tabindex="-1"></a>  <span class="at">task     =</span> <span class="st">&quot;bayes&quot;</span></span>
-<span id="cb8-96"><a href="#cb8-96" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a><span class="do">## Pedigree-based kernel for additive genetic effects</span></span>
+<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a>PED <span class="ot">&lt;-</span> <span class="fu">makePEDlist</span>(</span>
+<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a>  <span class="at">fnPED  =</span> <span class="st">&quot;pedigree.txt&quot;</span>,</span>
+<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a>  <span class="at">method =</span> <span class="st">&quot;S-D-NonInbred&quot;</span></span>
+<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-26"><a href="#cb8-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-27"><a href="#cb8-27" aria-hidden="true" tabindex="-1"></a><span class="do">## ------------------------------------------------------------------</span></span>
+<span id="cb8-28"><a href="#cb8-28" aria-hidden="true" tabindex="-1"></a><span class="do">## Feature-based effect: markers (high-dimensional predictors)</span></span>
+<span id="cb8-29"><a href="#cb8-29" aria-hidden="true" tabindex="-1"></a><span class="do">## ------------------------------------------------------------------</span></span>
+<span id="cb8-30"><a href="#cb8-30" aria-hidden="true" tabindex="-1"></a><span class="do">## Marker effects are defined through a feature matrix</span></span>
+<span id="cb8-31"><a href="#cb8-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-32"><a href="#cb8-32" aria-hidden="true" tabindex="-1"></a><span class="do">## Genotype feature matrix (e.g. PLINK BED/BIM/FAM)</span></span>
+<span id="cb8-33"><a href="#cb8-33" aria-hidden="true" tabindex="-1"></a>featureMatrix <span class="ot">&lt;-</span> <span class="fu">makeGlist</span>(</span>
+<span id="cb8-34"><a href="#cb8-34" aria-hidden="true" tabindex="-1"></a>  <span class="at">bedfiles =</span> <span class="fu">c</span>(<span class="st">&quot;chr1.bed&quot;</span>,<span class="st">&quot;chr2.bed&quot;</span>),</span>
+<span id="cb8-35"><a href="#cb8-35" aria-hidden="true" tabindex="-1"></a>  <span class="at">bimfiles =</span> <span class="fu">c</span>(<span class="st">&quot;chr1.bim&quot;</span>,<span class="st">&quot;chr2.bim&quot;</span>),</span>
+<span id="cb8-36"><a href="#cb8-36" aria-hidden="true" tabindex="-1"></a>  <span class="at">famfiles =</span> <span class="fu">c</span>(<span class="st">&quot;chr1.fam&quot;</span>,<span class="st">&quot;chr2.fam&quot;</span>)</span>
+<span id="cb8-37"><a href="#cb8-37" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb8-38"><a href="#cb8-38" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-39"><a href="#cb8-39" aria-hidden="true" tabindex="-1"></a><span class="do">## Optional grouping of markers used for multiple variance components</span></span>
+<span id="cb8-40"><a href="#cb8-40" aria-hidden="true" tabindex="-1"></a>featureSets <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb8-41"><a href="#cb8-41" aria-hidden="true" tabindex="-1"></a>  <span class="at">set1 =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">1000</span>,</span>
+<span id="cb8-42"><a href="#cb8-42" aria-hidden="true" tabindex="-1"></a>  <span class="at">set2 =</span> <span class="dv">1001</span><span class="sc">:</span><span class="dv">2000</span></span>
+<span id="cb8-43"><a href="#cb8-43" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb8-44"><a href="#cb8-44" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-45"><a href="#cb8-45" aria-hidden="true" tabindex="-1"></a><span class="do">## ------------------------------------------------------------------</span></span>
+<span id="cb8-46"><a href="#cb8-46" aria-hidden="true" tabindex="-1"></a><span class="do">## Bayesian prior specification</span></span>
+<span id="cb8-47"><a href="#cb8-47" aria-hidden="true" tabindex="-1"></a><span class="do">## ------------------------------------------------------------------</span></span>
+<span id="cb8-48"><a href="#cb8-48" aria-hidden="true" tabindex="-1"></a><span class="do">## Priors replace variance components in Bayesian models.</span></span>
+<span id="cb8-49"><a href="#cb8-49" aria-hidden="true" tabindex="-1"></a><span class="do">## Each prior corresponds to a named model component.</span></span>
+<span id="cb8-50"><a href="#cb8-50" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-51"><a href="#cb8-51" aria-hidden="true" tabindex="-1"></a>priors <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb8-52"><a href="#cb8-52" aria-hidden="true" tabindex="-1"></a>  <span class="at">dam =</span> <span class="fu">prior</span>(</span>
+<span id="cb8-53"><a href="#cb8-53" aria-hidden="true" tabindex="-1"></a>    <span class="at">variable     =</span> <span class="st">&quot;dam&quot;</span>,</span>
+<span id="cb8-54"><a href="#cb8-54" aria-hidden="true" tabindex="-1"></a>    <span class="at">traits       =</span> <span class="fu">c</span>(<span class="st">&quot;BW&quot;</span>, <span class="st">&quot;Gl&quot;</span>),</span>
+<span id="cb8-55"><a href="#cb8-55" aria-hidden="true" tabindex="-1"></a>    <span class="at">distribution =</span> <span class="fu">iw</span>(<span class="at">df =</span> <span class="dv">4</span>, <span class="at">S =</span> <span class="fu">diag</span>(<span class="dv">1</span>, <span class="dv">2</span>)),</span>
+<span id="cb8-56"><a href="#cb8-56" aria-hidden="true" tabindex="-1"></a>    <span class="at">start        =</span> <span class="fu">diag</span>(<span class="dv">1</span>, <span class="dv">2</span>)</span>
+<span id="cb8-57"><a href="#cb8-57" aria-hidden="true" tabindex="-1"></a>  ),</span>
+<span id="cb8-58"><a href="#cb8-58" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-59"><a href="#cb8-59" aria-hidden="true" tabindex="-1"></a>  <span class="at">animal =</span> <span class="fu">prior</span>(</span>
+<span id="cb8-60"><a href="#cb8-60" aria-hidden="true" tabindex="-1"></a>    <span class="at">variable     =</span> <span class="st">&quot;animal&quot;</span>,</span>
+<span id="cb8-61"><a href="#cb8-61" aria-hidden="true" tabindex="-1"></a>    <span class="at">traits       =</span> <span class="fu">c</span>(<span class="st">&quot;BW&quot;</span>, <span class="st">&quot;Gl&quot;</span>),</span>
+<span id="cb8-62"><a href="#cb8-62" aria-hidden="true" tabindex="-1"></a>    <span class="at">kernel       =</span> PED,</span>
+<span id="cb8-63"><a href="#cb8-63" aria-hidden="true" tabindex="-1"></a>    <span class="at">distribution =</span> <span class="fu">iw</span>(<span class="at">df =</span> <span class="dv">4</span>, <span class="at">S =</span> <span class="fu">diag</span>(<span class="dv">1</span>, <span class="dv">2</span>)),</span>
+<span id="cb8-64"><a href="#cb8-64" aria-hidden="true" tabindex="-1"></a>    <span class="at">start        =</span> <span class="fu">diag</span>(<span class="dv">1</span>, <span class="dv">2</span>)</span>
+<span id="cb8-65"><a href="#cb8-65" aria-hidden="true" tabindex="-1"></a>  ),</span>
+<span id="cb8-66"><a href="#cb8-66" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-67"><a href="#cb8-67" aria-hidden="true" tabindex="-1"></a>  <span class="at">marker =</span> <span class="fu">prior</span>(</span>
+<span id="cb8-68"><a href="#cb8-68" aria-hidden="true" tabindex="-1"></a>    <span class="at">variable     =</span> <span class="st">&quot;animal&quot;</span>,</span>
+<span id="cb8-69"><a href="#cb8-69" aria-hidden="true" tabindex="-1"></a>    <span class="at">traits       =</span> <span class="fu">c</span>(<span class="st">&quot;BW&quot;</span>, <span class="st">&quot;Gl&quot;</span>),</span>
+<span id="cb8-70"><a href="#cb8-70" aria-hidden="true" tabindex="-1"></a>    <span class="at">featureMatrix     =</span> featureMatrix,</span>
+<span id="cb8-71"><a href="#cb8-71" aria-hidden="true" tabindex="-1"></a>    <span class="at">featureSets  =</span> featureSets,</span>
+<span id="cb8-72"><a href="#cb8-72" aria-hidden="true" tabindex="-1"></a>    <span class="at">distribution =</span> <span class="fu">bayesC</span>(</span>
+<span id="cb8-73"><a href="#cb8-73" aria-hidden="true" tabindex="-1"></a>      <span class="at">pi     =</span> <span class="fu">beta</span>(<span class="dv">95</span>, <span class="dv">5</span>),</span>
+<span id="cb8-74"><a href="#cb8-74" aria-hidden="true" tabindex="-1"></a>      <span class="at">sigma2 =</span> <span class="fu">invchisq</span>(<span class="at">df =</span> <span class="dv">4</span>, <span class="at">scale =</span> <span class="fl">0.001</span>),</span>
+<span id="cb8-75"><a href="#cb8-75" aria-hidden="true" tabindex="-1"></a>      <span class="at">start  =</span> <span class="fu">list</span>(</span>
+<span id="cb8-76"><a href="#cb8-76" aria-hidden="true" tabindex="-1"></a>        <span class="at">set1 =</span> <span class="fu">diag</span>(<span class="fl">0.005</span>, <span class="dv">2</span>),</span>
+<span id="cb8-77"><a href="#cb8-77" aria-hidden="true" tabindex="-1"></a>        <span class="at">set2 =</span> <span class="fu">diag</span>(<span class="fl">0.001</span>, <span class="dv">2</span>)</span>
+<span id="cb8-78"><a href="#cb8-78" aria-hidden="true" tabindex="-1"></a>      )</span>
+<span id="cb8-79"><a href="#cb8-79" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb8-80"><a href="#cb8-80" aria-hidden="true" tabindex="-1"></a>  ),</span>
+<span id="cb8-81"><a href="#cb8-81" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-82"><a href="#cb8-82" aria-hidden="true" tabindex="-1"></a>  <span class="at">residual =</span> <span class="fu">prior</span>(</span>
+<span id="cb8-83"><a href="#cb8-83" aria-hidden="true" tabindex="-1"></a>    <span class="at">variable     =</span> <span class="st">&quot;residual&quot;</span>,</span>
+<span id="cb8-84"><a href="#cb8-84" aria-hidden="true" tabindex="-1"></a>    <span class="at">traits       =</span> <span class="fu">c</span>(<span class="st">&quot;BW&quot;</span>, <span class="st">&quot;Gl&quot;</span>),</span>
+<span id="cb8-85"><a href="#cb8-85" aria-hidden="true" tabindex="-1"></a>    <span class="at">distribution =</span> <span class="fu">iw</span>(<span class="at">df =</span> <span class="dv">4</span>, <span class="at">S =</span> <span class="fu">diag</span>(<span class="dv">1</span>, <span class="dv">2</span>)),</span>
+<span id="cb8-86"><a href="#cb8-86" aria-hidden="true" tabindex="-1"></a>    <span class="at">start        =</span> <span class="fu">diag</span>(<span class="dv">1</span>, <span class="dv">2</span>)</span>
+<span id="cb8-87"><a href="#cb8-87" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb8-88"><a href="#cb8-88" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb8-89"><a href="#cb8-89" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-90"><a href="#cb8-90" aria-hidden="true" tabindex="-1"></a><span class="do">## ------------------------------------------------------------------</span></span>
+<span id="cb8-91"><a href="#cb8-91" aria-hidden="true" tabindex="-1"></a><span class="do">## Model fitting</span></span>
+<span id="cb8-92"><a href="#cb8-92" aria-hidden="true" tabindex="-1"></a><span class="do">## ------------------------------------------------------------------</span></span>
+<span id="cb8-93"><a href="#cb8-93" aria-hidden="true" tabindex="-1"></a><span class="do">## The estimation task determines how the model is fit,</span></span>
+<span id="cb8-94"><a href="#cb8-94" aria-hidden="true" tabindex="-1"></a><span class="do">## without changing the model structure.</span></span>
+<span id="cb8-95"><a href="#cb8-95" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-96"><a href="#cb8-96" aria-hidden="true" tabindex="-1"></a>fit_bayes <span class="ot">&lt;-</span> <span class="fu">gfit</span>(</span>
+<span id="cb8-97"><a href="#cb8-97" aria-hidden="true" tabindex="-1"></a>  <span class="at">formulas =</span> formulas,</span>
+<span id="cb8-98"><a href="#cb8-98" aria-hidden="true" tabindex="-1"></a>  <span class="at">data     =</span> data,</span>
+<span id="cb8-99"><a href="#cb8-99" aria-hidden="true" tabindex="-1"></a>  <span class="at">priors   =</span> priors,</span>
+<span id="cb8-100"><a href="#cb8-100" aria-hidden="true" tabindex="-1"></a>  <span class="at">task     =</span> <span class="st">&quot;bayes&quot;</span></span>
+<span id="cb8-101"><a href="#cb8-101" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>The same model specification can be estimated using a marker BLUP formulation by replacing <code>prior()</code> with <code>vc()</code> and setting <code>task = &quot;solve&quot;</code>. The formulas, kernels, and feature matrices remain unchanged.</p>
 <p>Additional worked examples for REML/solve and Bayesian mixed models (single- and multi-trait) are provided in the vignettes.</p>
