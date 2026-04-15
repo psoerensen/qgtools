@@ -49,10 +49,7 @@ void mtgrsbed_core(
   if (nthreads > 0) {
     omp_set_num_threads(nthreads);
   }
-#else
-  nthreads = 1;
 #endif
-
 
 #pragma omp parallel
 {
