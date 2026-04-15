@@ -21,5 +21,5 @@ grs <- qgtools:::mtgrsbed_matrix(
   af = af,
   scale = TRUE,
   S = S,
-  nthreads = 4
+  nthreads = 1
 )

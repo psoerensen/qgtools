@@ -31,9 +31,30 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// mtgrsbed_matrix_f
+Rcpp::NumericMatrix mtgrsbed_matrix_f(std::string file, int n, const std::vector<int>& cls, const std::vector<double>& af, bool scale, Rcpp::NumericMatrix S, int nthreads, int MG, int JB, int TB);
+RcppExport SEXP _qgtools_mtgrsbed_matrix_f(SEXP fileSEXP, SEXP nSEXP, SEXP clsSEXP, SEXP afSEXP, SEXP scaleSEXP, SEXP SSEXP, SEXP nthreadsSEXP, SEXP MGSEXP, SEXP JBSEXP, SEXP TBSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< std::string >::type file(fileSEXP);
+    Rcpp::traits::input_parameter< int >::type n(nSEXP);
+    Rcpp::traits::input_parameter< const std::vector<int>& >::type cls(clsSEXP);
+    Rcpp::traits::input_parameter< const std::vector<double>& >::type af(afSEXP);
+    Rcpp::traits::input_parameter< bool >::type scale(scaleSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type S(SSEXP);
+    Rcpp::traits::input_parameter< int >::type nthreads(nthreadsSEXP);
+    Rcpp::traits::input_parameter< int >::type MG(MGSEXP);
+    Rcpp::traits::input_parameter< int >::type JB(JBSEXP);
+    Rcpp::traits::input_parameter< int >::type TB(TBSEXP);
+    rcpp_result_gen = Rcpp::wrap(mtgrsbed_matrix_f(file, n, cls, af, scale, S, nthreads, MG, JB, TB));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_qgtools_mtgrsbed_matrix", (DL_FUNC) &_qgtools_mtgrsbed_matrix, 10},
+    {"_qgtools_mtgrsbed_matrix_f", (DL_FUNC) &_qgtools_mtgrsbed_matrix_f, 10},
     {NULL, NULL, 0}
 };
 

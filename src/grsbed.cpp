@@ -46,8 +46,13 @@ void mtgrsbed_core(
   const char* error_msg = nullptr;
 
 #ifdef _OPENMP
-  if (nthreads > 0) omp_set_num_threads(nthreads);
+  if (nthreads > 0) {
+    omp_set_num_threads(nthreads);
+  }
+#else
+  nthreads = 1;
 #endif
+
 
 #pragma omp parallel
 {

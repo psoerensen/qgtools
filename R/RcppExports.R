@@ -5,3 +5,7 @@ mtgrsbed_matrix <- function(file, n, cls, af, scale, S, nthreads = 1L, MG = 64L,
     .Call(`_qgtools_mtgrsbed_matrix`, file, n, cls, af, scale, S, nthreads, MG, JB, TB)
 }
 
+mtgrsbed_matrix_f <- function(file, n, cls, af, scale, S, nthreads = 1L, MG = 64L, JB = 1024L, TB = 32L) {
+    .Call(`_qgtools_mtgrsbed_matrix_f`, file, n, cls, af, scale, S, nthreads, MG, JB, TB)
+}
+
