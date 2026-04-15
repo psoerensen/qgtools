@@ -1,3 +1,8 @@
+.onLoad <- function(libname, pkgname) {
+  if (Sys.getenv("OMP_DYNAMIC") == "") {
+    Sys.setenv(OMP_DYNAMIC = "FALSE")
+  }
+}
 # .onLoad <- function(libname, pkgname) {
 #   lib <- switch(Sys.info()[["sysname"]],
 #                 "Linux"   = "linux/libqgtools.so",
