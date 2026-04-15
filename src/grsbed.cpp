@@ -44,7 +44,10 @@ void mtgrsbed_core(
   std::vector<double> map0(MG), map1(MG), map2(MG), map3(MG);
 
 #ifdef _OPENMP
-  if (nthreads > 0) omp_set_num_threads(nthreads);
+  if (nthreads > 0) {
+    omp_set_dynamic(0);
+    omp_set_num_threads(nthreads);
+  }
 #endif
 
 #pragma omp parallel
