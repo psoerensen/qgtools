@@ -1,9 +1,16 @@
-CXX_STD = CXX11
+PKG_FFLAGS = $(SHLIB_OPENMP_FFLAGS)
+PKG_CXXFLAGS = $(SHLIB_OPENMP_CXXFLAGS) -O3 -march=native -ffast-math
+PKG_LIBS = $(SHLIB_OPENMP_CXXFLAGS) $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
 
-PKG_CXXFLAGS = -O3 -fopenmp
-PKG_FFLAGS   = -O3 -fopenmp
+all: $(SHLIB)
 
-PKG_LIBS = -fopenmp $(FLIBS)
+
+#CXX_STD = CXX11
+
+#PKG_CXXFLAGS = -O3 -fopenmp
+#PKG_FFLAGS   = -O3 -fopenmp
+
+#PKG_LIBS = -fopenmp $(FLIBS)
 
 # Maybe consider use this later (might need to be changed if linux/mac/window)
 # "I" location of files
