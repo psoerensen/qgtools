@@ -1,3 +1,12 @@
-CXX_STD = CXX11
 PKG_CXXFLAGS = $(SHLIB_OPENMP_CXXFLAGS)
-PKG_LIBS = $(SHLIB_OPENMP_CXXFLAGS) $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
+PKG_LIBS = $(SHLIB_OPENMP_CXXFLAGS)
+PKG_LIBS += $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
+
+# Maybe consider use this later (might need to be changed if linux/mac/window)
+# "I" location of files
+# PKG_CPPFLAGS = -I../inst/include
+
+# "L" location of .so files and -lmtgrs links libmtgrs.so
+# PKG_LIBS = -L../inst/libs -lmtgrs \
+#           $(SHLIB_OPENMP_CXXFLAGS) \
+#           $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
