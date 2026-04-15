@@ -3,8 +3,7 @@ CXX_STD = CXX11
 PKG_CXXFLAGS = -O3 -fopenmp
 PKG_FFLAGS   = -O3 -fopenmp
 
-PKG_LIBS = $(SHLIB_OPENMP_CFLAGS) $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
-
+PKG_LIBS = -fopenmp $(FLIBS)
 
 # Maybe consider use this later (might need to be changed if linux/mac/window)
 # "I" location of files
