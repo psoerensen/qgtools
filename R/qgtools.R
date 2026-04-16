@@ -1,58 +1,29 @@
-# .onLoad <- function(libname, pkgname) {
-#   lib <- switch(Sys.info()[["sysname"]],
-#                 "Linux"   = "linux/libqgtools.so",
-#                 "Darwin"  = "mac/libqgtools.dylib",
-#                 "Windows" = "windows/libqgtools.dll"
-#   )
-#   dyn.load(system.file("libs", lib, package = pkgname))
-# }
+.onLoad <- function(libname, pkgname) {
 
-.with_threads <- function(n, mode, expr) {
-  old <- Sys.getenv(c(
-    "OMP_NUM_THREADS",
-    "OPENBLAS_NUM_THREADS",
-    "MKL_NUM_THREADS",
-    "OMP_DYNAMIC"
-  ), unset = NA)
+  if (is.null(getOption("qgtools.threads"))) {
 
-  on.exit({
-    do.call(Sys.setenv, as.list(old))
-  }, add = TRUE)
+    n <- as.integer(Sys.getenv("SLURM_CPUS_PER_TASK", unset = NA))
 
-  if (mode == "omp") {
-    Sys.setenv(
-      OMP_NUM_THREADS = n,
-      OMP_DYNAMIC = "FALSE",
-      OPENBLAS_NUM_THREADS = 1,
-      MKL_NUM_THREADS = 1
-    )
+    if (is.na(n) || n <= 0) {
+      n <- parallel::detectCores(logical = FALSE)
+    }
+
+    options(qgtools.threads = n)
   }
 
-  if (mode == "blas") {
-    Sys.setenv(
-      OMP_NUM_THREADS = 1,
-      OPENBLAS_NUM_THREADS = n,
-      MKL_NUM_THREADS = n
+  # Internal thread manager ---------------------------------------------
+  if (.Platform$OS.type == "unix" && Sys.info()[["sysname"]] == "Darwin") {
+    packageStartupMessage(
+      "OpenMP may be unavailable on macOS; performance may be reduced."
     )
   }
+  #   lib <- switch(Sys.info()[["sysname"]],
+  #                 "Linux"   = "linux/libqgtools.so",
+  #                 "Darwin"  = "mac/libqgtools.dylib",
+  #                 "Windows" = "windows/libqgtools.dll"
+  #   )
+  #   dyn.load(system.file("libs", lib, package = pkgname))
 
-  force(expr)
 }
 
-# example usage
-# mtgrsbed_matrix <- function(..., nthreads = 1) {
-#
-#   .with_threads(nthreads, "omp", {
-#     .Call(...)
-#   })
-#
-# }
 
-
-# my_blas_function <- function(..., nthreads = 1) {
-#
-#   .with_threads(nthreads, "blas", {
-#     # BLAS-heavy code
-#   })
-#
-# }
