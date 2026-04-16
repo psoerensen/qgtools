@@ -6,6 +6,10 @@ using namespace Rcpp;
 
 #include "RcppHeaders.h"
 
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
 // -----------------------------------------------------------------------------
 // HIGH-LEVEL interface (user-facing)
 // Handles:
@@ -29,6 +33,17 @@ NumericMatrix mtgrsbed_matrix(
 ) {
   const int m  = S.nrow();
   const int nt = S.ncol();
+
+#ifdef _OPENMP
+  omp_set_dynamic(0);
+
+  if (nthreads > 0) {
+    omp_set_num_threads(nthreads);
+  } else {
+    // fallback: use max available
+    omp_set_num_threads(omp_get_max_threads());
+  }
+#endif
 
   if ((int)cls.size() != m) {
     stop("cls.size() must match number of rows in S");
