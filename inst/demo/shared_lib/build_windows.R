@@ -10,6 +10,8 @@ dir.create(demo_dir, showWarnings = FALSE)
 file.copy(demo_src, demo_dir, recursive = TRUE)
 
 setwd(demo_dir)
+cat("\nFiles before build:\n")
+print(list.files())
 
 
 cat("Building shared library (Windows)...\n")
