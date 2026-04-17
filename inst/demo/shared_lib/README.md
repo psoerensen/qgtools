@@ -9,8 +9,8 @@ Contents:
 Build:
   make
 
-Run:
-  Rscript test.R
+Build in R:
+  see build_shared_lib.R
 
 Purpose:
 - illustrate shared library design

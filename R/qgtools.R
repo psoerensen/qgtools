@@ -27,3 +27,15 @@
 }
 
 
+# .onLoad <- function(libname, pkgname) {
+#
+#   if (is.null(getOption("qgtools.threads"))) {
+#     n <- as.integer(Sys.getenv("SLURM_CPUS_PER_TASK", NA))
+#     if (is.na(n)) {
+#       n <- parallel::detectCores(logical = FALSE)
+#     }
+#     options(qgtools.threads = n)
+#   }
+#
+#   qgtools_set_threads(getOption("qgtools.threads"), backend = "auto", verbose = FALSE)
+# }

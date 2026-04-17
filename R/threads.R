@@ -1,9 +1,80 @@
 #' Set number of threads for qgtools
 #' @param n number of threads
 #' @export
-qgtools_set_threads <- function(n) {
-  options(qgtools.threads = as.integer(n))
+qgtools_set_threads <- function(n = NULL,
+                                backend = c("openmp", "blas", "auto"),
+                                verbose = TRUE) {
+
+  backend <- match.arg(backend)
+
+  # Detect threads
+  if (is.null(n)) {
+    n <- getOption("qgtools.threads", NA_integer_)
+    if (is.na(n)) {
+      n <- parallel::detectCores(logical = FALSE)
+    }
+  }
+
+  # Normalize
+  n <- as.integer(n)
+  if (is.na(n) || n < 1) n <- 1
+
+  # Save in options
+  options(qgtools.threads = n)
+
+  # Detect OS
+  sys <- Sys.info()[["sysname"]]
+
+  # Auto backend selection
+  if (backend == "auto") {
+    # Simple heuristic
+    backend <- if (n <= 2) "blas" else "openmp"
+  }
+
+  # -----------------------------
+  # Apply threading configuration
+  # -----------------------------
+
+  if (backend == "openmp") {
+
+    Sys.setenv(
+      OMP_NUM_THREADS = n,
+      OMP_DYNAMIC = "FALSE",
+      OPENBLAS_NUM_THREADS = 1,
+      MKL_NUM_THREADS = 1
+    )
+
+  } else if (backend == "blas") {
+
+    Sys.setenv(
+      OMP_NUM_THREADS = 1,
+      OMP_DYNAMIC = "FALSE",
+      OPENBLAS_NUM_THREADS = n,
+      MKL_NUM_THREADS = n
+    )
+
+  }
+
+  # macOS warning
+  if (sys == "Darwin" && backend == "openmp") {
+    warning("OpenMP may not be available on macOS; performance may be reduced.")
+  }
+
+  if (verbose) {
+    cat("qgtools threading configured:\n")
+    cat("  backend :", backend, "\n")
+    cat("  threads :", n, "\n")
+  }
+
+  invisible(list(
+    backend = backend,
+    threads = n
+  ))
 }
+
+#qgtools_set_threads <- function(n) {
+#  options(qgtools.threads = as.integer(n))
+#}
 
 
 #' Show threading configuration for qgtools
@@ -71,6 +142,38 @@ qgtools_threads_info <- function() {
   invisible(NULL)
 }
 
+qgtools_run_openmp <- function(expr) {
+  old <- Sys.getenv(c("OMP_NUM_THREADS","MKL_NUM_THREADS","OPENBLAS_NUM_THREADS"))
+
+  on.exit(do.call(Sys.setenv, as.list(old)), add = TRUE)
+
+  qgtools_set_threads(getOption("qgtools.threads"), backend = "openmp", verbose = FALSE)
+
+  force(expr)
+}
+
+qgtools_run_blas <- function(expr) {
+  old <- Sys.getenv(c("OMP_NUM_THREADS","MKL_NUM_THREADS","OPENBLAS_NUM_THREADS"))
+
+  on.exit(do.call(Sys.setenv, as.list(old)), add = TRUE)
+
+  qgtools_set_threads(getOption("qgtools.threads"), backend = "blas", verbose = FALSE)
+
+  force(expr)
+}
+
+# options(qgtools.threads = 24)
+#
+# # OpenMP kernel
+# qgtools_run_openmp({
+#   mtgrsbed_matrix(...)
+# })
+#
+# # MKL/BLAS computation
+# qgtools_run_blas({
+#   crossprod(X)
+# })
+
 .qgtools_threads <- function() {
 
   # 1. SLURM (most important)
@@ -124,6 +227,41 @@ qgtools_threads_info <- function() {
   force(expr)
 }
 
+# ext <- switch(sys,
+#               Linux   = "so",
+#               Darwin  = "dylib",
+#               Windows = "dll"
+# )
+#
+# dyn.load(paste0("libgrsbed_cpp.", ext))
+
+
+# run_openmp <- function(...) {
+#   old <- Sys.getenv(c("OMP_NUM_THREADS","MKL_NUM_THREADS","OPENBLAS_NUM_THREADS"))
+#   on.exit(do.call(Sys.setenv, as.list(old)), add = TRUE)
+#
+#   Sys.setenv(
+#     OMP_NUM_THREADS = getOption("qgtools.threads", 1),
+#     MKL_NUM_THREADS = 1,
+#     OPENBLAS_NUM_THREADS = 1
+#   )
+#
+#   .Call("myomp_function", ...)
+# }
+#
+# run_mkl <- function(...) {
+#   old <- Sys.getenv(c("OMP_NUM_THREADS","MKL_NUM_THREADS","OPENBLAS_NUM_THREADS"))
+#   on.exit(do.call(Sys.setenv, as.list(old)), add = TRUE)
+#
+#   Sys.setenv(
+#     OMP_NUM_THREADS = 1,
+#     MKL_NUM_THREADS = getOption("qgtools.threads", 1),
+#     OPENBLAS_NUM_THREADS = 1
+#   )
+#
+#   .Call("mymkl_function", ...)
+# }
+#
 
 #options(qgtools.threads = 8)
 #mtgrsbed_matrix(..., nthreads = 2)

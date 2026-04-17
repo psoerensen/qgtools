@@ -4,7 +4,11 @@
 \alias{qgtools_set_threads}
 \title{Set number of threads for qgtools}
 \usage{
-qgtools_set_threads(n)
+qgtools_set_threads(
+  n = NULL,
+  backend = c("openmp", "blas", "auto"),
+  verbose = TRUE
+)
 }
 \arguments{
 \item{n}{number of threads}
