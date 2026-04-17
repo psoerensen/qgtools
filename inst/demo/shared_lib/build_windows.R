@@ -11,7 +11,9 @@ file.copy(demo_src, demo_dir, recursive = TRUE)
 
 setwd(demo_dir)
 
+
 cat("Building shared library (Windows)...\n")
+system("make clean")
 system("make")
 
 cat("\nFiles after build:\n")
