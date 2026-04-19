@@ -355,6 +355,69 @@ Backend selection
 -----------------------------------------------------------
 ```
 
+### Project structure
+
+The `qgtools` repository is organized to clearly separate:
+
+- Package-integrated implementations
+- External shared library implementations
+
+**Core package code (`src/`)**
+
+```text
+qgtools/src/
+```
+
+This directory contains:
+
+- C++ and Fortran implementations compiled as part of the R package
+- `.Call()` interfaces exposed through the package namespace
+- Internal backends:
+  - `internal_cpp`
+  - `internal_fortran`
+
+This is the standard way to integrate compiled code into an R package.
+
+
+**External library example (`inst/demo/shared_lib/`)**
+
+```text
+qgtools/inst/demo/shared_lib/
+```
+
+This directory contains a standalone example of an external backend:
+
+- `mtgrsbed_core.cpp` / `.f90` → core computational kernels  
+- `mtgrsbed_call.cpp` → R interface layer  
+- `libqgtools_init.c` → registration of `.Call()` routines  
+- `Makefile` → cross-platform build system  
+- `build_unix.R` / `build_windows.R` → helper scripts  
+
+This code is compiled into a shared library:
+
+- Linux: `libqgtools.so`  
+- Windows: `libqgtools.dll`  
+
+
+**Key idea**
+
+- `src/` → tightly coupled to the R package  
+- `inst/.../shared_lib/` → independent, externally compiled module  
+
+Both expose the same interface and can be used interchangeably.
+
+
+**Why this matters**
+
+This structure allows collaborators to:
+
+- Develop optimized code outside the R package  
+- Avoid modifying package internals  
+- Build and distribute their own backends  
+- Plug into the existing workflow using `.Call()`  
+
+The external library in `inst/demo/shared_lib/` serves as a reference implementation for integrating custom high-performance code into the framework.
+
 ## Extending the framework
 
 One of the main advantages of the `qgtools` design is that new high-performance implementations can be added without modifying the user-facing R interface.
