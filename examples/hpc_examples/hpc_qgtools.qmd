@@ -21,7 +21,7 @@ The tutorial illustrates how these backends can be:
 - Scaled using OpenMP for multi-core execution  
 - Extended without modifying the core R package  
 
-Here is is demonstratde how to:
+Here it is demonstrated how to:
 
 - Call compiled code from R using `.Call()`  
 - Implement interchangeable backends with identical interfaces  
@@ -43,8 +43,11 @@ It is recommended to use a conda (or mamba) environment to ensure that all requi
 ```bash
 conda install -n base -c conda-forge mamba
 
-mamba create -n rcsg   -c conda-forge   r-base r-devtools r-remotes r-xml r-rcurl r-pkgbuild   zlib compilers make pkg-config "libblas=*=*mkl"
-
+mamba create -n rcsg \
+  -c conda-forge \
+  r-base r-devtools r-remotes r-xml r-rcurl r-pkgbuild \
+  zlib compilers make pkg-config "libblas=*=*mkl"
+  
 conda activate rcsg
 ```
 **Explanation**
@@ -123,9 +126,7 @@ library(bench)
 
 ## Data and Inputs
 
-This section prepares the input data required for the compiled backends. The goal is to construct a minimal, self-contained example that mimics a typical workflow while remaining portable.
-
-This step constructs the full set of inputs required by the compiled backends:
+This section prepares the input data required for the compiled backends by constructing a minimal, portable example.
 
 - A genotype file (`file`)  
 - Metadata (`n`, `m`, `cls`, `af`)  
@@ -151,9 +152,9 @@ for (f in files) {
 
 Glist <- gprep(
   study = "Example",
-  bedfiles = "human.bed",
-  bimfiles = "human.bim",
-  famfiles = "human.fam"
+  bedfiles = file.path(data_dir, "human.bed"),
+  bimfiles = file.path(data_dir, "human.bim"),
+  famfiles = file.path(data_dir, "human.fam")
 )
 
 chr <- 1
@@ -298,7 +299,7 @@ stopifnot(isTRUE(all.equal(grs_cpp, grs_fortran, tolerance = tol)))
 
 ## External Backend
 
-This step demonstrates that:
+This section demonstrates that:
 
 - High-performance implementations can be provided as external shared libraries  
 - Users can switch between internal and external implementations without changing their R code  
@@ -337,6 +338,8 @@ stopifnot(isTRUE(all.equal(grs_cpp, grs_external, tolerance = tol)))
 
 ## Architecture
 
+The following diagram summarizes how the R interface is connected to different compiled backends:
+
 ```
 User (R)
   ↓
@@ -348,9 +351,98 @@ Backend selection
 | internal_cpp      (C++ implementation)                  |
 | internal_fortran  (Fortran implementation)              |
 | external_cpp      (shared library plugin using C++)     |
-| external_fortrab  (shared library plugin using Fortran) |
+| external_fortran  (shared library plugin using Fortran) |
 -----------------------------------------------------------
 ```
+
+## Extending the framework
+
+One of the main advantages of the `qgtools` design is that new high-performance implementations can be added without modifying the user-facing R interface.
+
+This section outlines how to integrate custom C++ or Fortran code and expose it through the same workflow.
+
+
+### 1. Adding a new C++ implementation
+
+A new backend typically consists of:
+
+- A core implementation (pure C++ or Fortran)
+- A thin interface layer that converts R objects to native types
+- A `.Call()` entry point
+
+A minimal example in C++:
+
+```cpp
+#include <R.h>
+#include <Rinternals.h>
+
+extern "C" SEXP my_backend(SEXP xSEXP) {
+  double* x = REAL(xSEXP);
+  int n = LENGTH(xSEXP);
+
+  SEXP out = PROTECT(allocVector(REALSXP, n));
+  double* out_ptr = REAL(out);
+
+  for (int i = 0; i < n; ++i) {
+    out_ptr[i] = 2.0 * x[i];
+  }
+
+  UNPROTECT(1);
+  return out;
+}
+```
+
+### 2. Registering the function with `.Call()`
+
+```c
+#include <R_ext/Rdynload.h>
+
+extern SEXP my_backend(SEXP);
+
+static const R_CallMethodDef CallEntries[] = {
+  {"my_backend", (DL_FUNC) &my_backend, 1},
+  {NULL, NULL, 0}
+};
+
+void R_init_myLib(DllInfo *dll)
+{
+  R_registerRoutines(dll, NULL, CallEntries, NULL, NULL);
+  R_useDynamicSymbols(dll, FALSE);
+}
+```
+
+### 3. Calling from R
+
+```r
+.Call("my_backend", x)
+```
+
+### 4. Integrating as a new backend
+
+```r
+switch(
+  backend,
+  internal_cpp = .Call("mtgrsbed_c", ...),
+  internal_fortran = .Call("mtgrsbed_f", ...),
+  external_cpp = .Call("lib_mtgrsbed_c", ...),
+  my_backend = .Call("my_backend", ...)
+)
+```
+
+### 5. Using external shared libraries
+
+```r
+dyn.load("libqgtools.so")
+```
+
+### Summary
+
+This structure allows:
+
+- Modular extensions
+- Consistent interfaces
+- Independent optimization of compiled code
+
 
 ## Takeaways
 
@@ -358,3 +450,27 @@ Backend selection
 - Portable → high-performance transition
 - Numerical consistency ensured
 - Modular and extensible design
+
+
+### Platform notes
+
+The setup described above is primarily intended for Linux and HPC environments.
+
+On Windows, a full conda environment is not required. Instead, it is sufficient to install:
+
+- R
+- Rtools (which provides the required C++ and Fortran toolchain)
+
+Once Rtools is installed and available on the system PATH, the examples in this tutorial—including compilation of external libraries—should work out of the box.
+
+**Note**
+
+- Ensure that Rtools is added to your system PATH  
+- Restart R after installation  
+- You can verify the setup with:
+
+```r
+system("g++ --version")
+system("gfortran --version")
+```
+If these commands return valid version information, the toolchain is correctly configured.

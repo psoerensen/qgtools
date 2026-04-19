@@ -3894,7 +3894,19 @@ vertical-align: -.125em;
   <li><a href="#validation" id="toc-validation" class="nav-link" data-scroll-target="#validation">Validation</a></li>
   <li><a href="#external-backend" id="toc-external-backend" class="nav-link" data-scroll-target="#external-backend">External Backend</a></li>
   <li><a href="#architecture" id="toc-architecture" class="nav-link" data-scroll-target="#architecture">Architecture</a></li>
-  <li><a href="#takeaways" id="toc-takeaways" class="nav-link" data-scroll-target="#takeaways">Takeaways</a></li>
+  <li><a href="#extending-the-framework" id="toc-extending-the-framework" class="nav-link" data-scroll-target="#extending-the-framework">Extending the framework</a>
+  <ul class="collapse">
+  <li><a href="#adding-a-new-c-implementation" id="toc-adding-a-new-c-implementation" class="nav-link" data-scroll-target="#adding-a-new-c-implementation">1. Adding a new C++ implementation</a></li>
+  <li><a href="#registering-the-function-with-.call" id="toc-registering-the-function-with-.call" class="nav-link" data-scroll-target="#registering-the-function-with-.call">2. Registering the function with <code>.Call()</code></a></li>
+  <li><a href="#calling-from-r" id="toc-calling-from-r" class="nav-link" data-scroll-target="#calling-from-r">3. Calling from R</a></li>
+  <li><a href="#integrating-as-a-new-backend" id="toc-integrating-as-a-new-backend" class="nav-link" data-scroll-target="#integrating-as-a-new-backend">4. Integrating as a new backend</a></li>
+  <li><a href="#using-external-shared-libraries" id="toc-using-external-shared-libraries" class="nav-link" data-scroll-target="#using-external-shared-libraries">5. Using external shared libraries</a></li>
+  <li><a href="#summary" id="toc-summary" class="nav-link" data-scroll-target="#summary">Summary</a></li>
+  </ul></li>
+  <li><a href="#takeaways" id="toc-takeaways" class="nav-link" data-scroll-target="#takeaways">Takeaways</a>
+  <ul class="collapse">
+  <li><a href="#platform-notes" id="toc-platform-notes" class="nav-link" data-scroll-target="#platform-notes">Platform notes</a></li>
+  </ul></li>
   </ul>
 </nav>
     </div>
@@ -3934,7 +3946,7 @@ vertical-align: -.125em;
 </li>
 <li>Extended without modifying the core R package</li>
 </ul>
-<p>Here is is demonstratde how to:</p>
+<p>Here it is demonstrated how to:</p>
 <ul>
 <li>Call compiled code from R using <code>.Call()</code><br>
 </li>
@@ -3956,9 +3968,12 @@ vertical-align: -.125em;
 <p>It is recommended to use a conda (or mamba) environment to ensure that all required tools for compiling and running C++ and Fortran code are available and consistent across systems.</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">conda</span> install <span class="at">-n</span> base <span class="at">-c</span> conda-forge mamba</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="ex">mamba</span> create <span class="at">-n</span> rcsg   <span class="at">-c</span> conda-forge   r-base r-devtools r-remotes r-xml r-rcurl r-pkgbuild   zlib compilers make pkg-config <span class="st">&quot;libblas=*=*mkl&quot;</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="ex">conda</span> activate rcsg</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="ex">mamba</span> create <span class="at">-n</span> rcsg <span class="dt">\</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">-c</span> conda-forge <span class="dt">\</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  r-base r-devtools r-remotes r-xml r-rcurl r-pkgbuild <span class="dt">\</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  zlib compilers make pkg-config <span class="st">&quot;libblas=*=*mkl&quot;</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="ex">conda</span> activate rcsg</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p><strong>Explanation</strong></p>
 <ul>
 <li><p><code>conda install -n base -c conda-forge mamba</code><br>
@@ -4031,8 +4046,7 @@ Restrict BLAS libraries (used internally by R) to a single thread. This is criti
 </section>
 <section id="data-and-inputs" class="level2">
 <h2 class="anchored" data-anchor-id="data-and-inputs">Data and Inputs</h2>
-<p>This section prepares the input data required for the compiled backends. The goal is to construct a minimal, self-contained example that mimics a typical workflow while remaining portable.</p>
-<p>This step constructs the full set of inputs required by the compiled backends:</p>
+<p>This section prepares the input data required for the compiled backends by constructing a minimal, portable example.</p>
 <ul>
 <li>A genotype file (<code>file</code>)<br>
 </li>
@@ -4056,9 +4070,9 @@ Restrict BLAS libraries (used internally by R) to a single thread. This is criti
 <span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>Glist <span class="ot">&lt;-</span> <span class="fu">gprep</span>(</span>
 <span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">study =</span> <span class="st">&quot;Example&quot;</span>,</span>
-<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>  <span class="at">bedfiles =</span> <span class="st">&quot;human.bed&quot;</span>,</span>
-<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>  <span class="at">bimfiles =</span> <span class="st">&quot;human.bim&quot;</span>,</span>
-<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>  <span class="at">famfiles =</span> <span class="st">&quot;human.fam&quot;</span></span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>  <span class="at">bedfiles =</span> <span class="fu">file.path</span>(data_dir, <span class="st">&quot;human.bed&quot;</span>),</span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>  <span class="at">bimfiles =</span> <span class="fu">file.path</span>(data_dir, <span class="st">&quot;human.bim&quot;</span>),</span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>  <span class="at">famfiles =</span> <span class="fu">file.path</span>(data_dir, <span class="st">&quot;human.fam&quot;</span>)</span>
 <span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>)</span>
 <span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>chr <span class="ot">&lt;-</span> <span class="dv">1</span></span>
@@ -4189,7 +4203,7 @@ Stops execution if the condition is not satisfied, ensuring that inconsistencies
 </section>
 <section id="external-backend" class="level2">
 <h2 class="anchored" data-anchor-id="external-backend">External Backend</h2>
-<p>This step demonstrates that:</p>
+<p>This section demonstrates that:</p>
 <ul>
 <li>High-performance implementations can be provided as external shared libraries<br>
 </li>
@@ -4224,6 +4238,7 @@ Stops execution if the results differ beyond the acceptable tolerance, ensuring 
 </section>
 <section id="architecture" class="level2">
 <h2 class="anchored" data-anchor-id="architecture">Architecture</h2>
+<p>The following diagram summarizes how the R interface is connected to different compiled backends:</p>
 <pre><code>User (R)
   ↓
 mtgrsbed()
@@ -4234,8 +4249,84 @@ Backend selection
 | internal_cpp      (C++ implementation)                  |
 | internal_fortran  (Fortran implementation)              |
 | external_cpp      (shared library plugin using C++)     |
-| external_fortrab  (shared library plugin using Fortran) |
+| external_fortran  (shared library plugin using Fortran) |
 -----------------------------------------------------------</code></pre>
+</section>
+<section id="extending-the-framework" class="level2">
+<h2 class="anchored" data-anchor-id="extending-the-framework">Extending the framework</h2>
+<p>One of the main advantages of the <code>qgtools</code> design is that new high-performance implementations can be added without modifying the user-facing R interface.</p>
+<p>This section outlines how to integrate custom C++ or Fortran code and expose it through the same workflow.</p>
+<section id="adding-a-new-c-implementation" class="level3">
+<h3 class="anchored" data-anchor-id="adding-a-new-c-implementation">1. Adding a new C++ implementation</h3>
+<p>A new backend typically consists of:</p>
+<ul>
+<li>A core implementation (pure C++ or Fortran)</li>
+<li>A thin interface layer that converts R objects to native types</li>
+<li>A <code>.Call()</code> entry point</li>
+</ul>
+<p>A minimal example in C++:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;R.h&gt;</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;Rinternals.h&gt;</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="at">extern</span> <span class="st">&quot;C&quot;</span> SEXP my_backend<span class="op">(</span>SEXP xSEXP<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">double</span><span class="op">*</span> x <span class="op">=</span> REAL<span class="op">(</span>xSEXP<span class="op">);</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>  <span class="dt">int</span> n <span class="op">=</span> LENGTH<span class="op">(</span>xSEXP<span class="op">);</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>  SEXP out <span class="op">=</span> PROTECT<span class="op">(</span>allocVector<span class="op">(</span>REALSXP<span class="op">,</span> n<span class="op">));</span></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>  <span class="dt">double</span><span class="op">*</span> out_ptr <span class="op">=</span> REAL<span class="op">(</span>out<span class="op">);</span></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> n<span class="op">;</span> <span class="op">++</span>i<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>    out_ptr<span class="op">[</span>i<span class="op">]</span> <span class="op">=</span> <span class="fl">2.0</span> <span class="op">*</span> x<span class="op">[</span>i<span class="op">];</span></span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>  UNPROTECT<span class="op">(</span><span class="dv">1</span><span class="op">);</span></span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> out<span class="op">;</span></span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="registering-the-function-with-.call" class="level3">
+<h3 class="anchored" data-anchor-id="registering-the-function-with-.call">2. Registering the function with <code>.Call()</code></h3>
+<div class="sourceCode" id="cb11"><pre class="sourceCode c code-with-copy"><code class="sourceCode c"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;R_ext/Rdynload.h&gt;</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="kw">extern</span> SEXP my_backend<span class="op">(</span>SEXP<span class="op">);</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a><span class="dt">static</span> <span class="dt">const</span> R_CallMethodDef CallEntries<span class="op">[]</span> <span class="op">=</span> <span class="op">{</span></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>  <span class="op">{</span><span class="st">&quot;my_backend&quot;</span><span class="op">,</span> <span class="op">(</span>DL_FUNC<span class="op">)</span> <span class="op">&amp;</span>my_backend<span class="op">,</span> <span class="dv">1</span><span class="op">},</span></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>  <span class="op">{</span>NULL<span class="op">,</span> NULL<span class="op">,</span> <span class="dv">0</span><span class="op">}</span></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> R_init_myLib<span class="op">(</span>DllInfo <span class="op">*</span>dll<span class="op">)</span></span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>  R_registerRoutines<span class="op">(</span>dll<span class="op">,</span> NULL<span class="op">,</span> CallEntries<span class="op">,</span> NULL<span class="op">,</span> NULL<span class="op">);</span></span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a>  R_useDynamicSymbols<span class="op">(</span>dll<span class="op">,</span> FALSE<span class="op">);</span></span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="calling-from-r" class="level3">
+<h3 class="anchored" data-anchor-id="calling-from-r">3. Calling from R</h3>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">.Call</span>(<span class="st">&quot;my_backend&quot;</span>, x)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="integrating-as-a-new-backend" class="level3">
+<h3 class="anchored" data-anchor-id="integrating-as-a-new-backend">4. Integrating as a new backend</h3>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="cf">switch</span>(</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>  backend,</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">internal_cpp =</span> <span class="fu">.Call</span>(<span class="st">&quot;mtgrsbed_c&quot;</span>, ...),</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">internal_fortran =</span> <span class="fu">.Call</span>(<span class="st">&quot;mtgrsbed_f&quot;</span>, ...),</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">external_cpp =</span> <span class="fu">.Call</span>(<span class="st">&quot;lib_mtgrsbed_c&quot;</span>, ...),</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">my_backend =</span> <span class="fu">.Call</span>(<span class="st">&quot;my_backend&quot;</span>, ...)</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="using-external-shared-libraries" class="level3">
+<h3 class="anchored" data-anchor-id="using-external-shared-libraries">5. Using external shared libraries</h3>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">dyn.load</span>(<span class="st">&quot;libqgtools.so&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="summary" class="level3">
+<h3 class="anchored" data-anchor-id="summary">Summary</h3>
+<p>This structure allows:</p>
+<ul>
+<li>Modular extensions</li>
+<li>Consistent interfaces</li>
+<li>Independent optimization of compiled code</li>
+</ul>
+</section>
 </section>
 <section id="takeaways" class="level2">
 <h2 class="anchored" data-anchor-id="takeaways">Takeaways</h2>
@@ -4245,8 +4336,29 @@ Backend selection
 <li>Numerical consistency ensured</li>
 <li>Modular and extensible design</li>
 </ul>
+<section id="platform-notes" class="level3">
+<h3 class="anchored" data-anchor-id="platform-notes">Platform notes</h3>
+<p>The setup described above is primarily intended for Linux and HPC environments.</p>
+<p>On Windows, a full conda environment is not required. Instead, it is sufficient to install:</p>
+<ul>
+<li>R</li>
+<li>Rtools (which provides the required C++ and Fortran toolchain)</li>
+</ul>
+<p>Once Rtools is installed and available on the system PATH, the examples in this tutorial—including compilation of external libraries—should work out of the box.</p>
+<p><strong>Note</strong></p>
+<ul>
+<li>Ensure that Rtools is added to your system PATH<br>
+</li>
+<li>Restart R after installation<br>
+</li>
+<li>You can verify the setup with:</li>
+</ul>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">system</span>(<span class="st">&quot;g++ --version&quot;</span>)</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="fu">system</span>(<span class="st">&quot;gfortran --version&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>If these commands return valid version information, the toolchain is correctly configured.</p>
 
 
+</section>
 </section>
 
 </main> <!-- /main -->
