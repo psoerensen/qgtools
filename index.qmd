@@ -529,7 +529,10 @@ These examples illustrate how complex legacy DMU models translate directly into
 qgtools while benefiting from a clearer and more modular model specification.
 
 
-### Advanced tutorial using C++, Fortran, and External libraries
+### Advanced tutorial: integrating C++, Fortran, and external libraries
 
+This tutorial shows how collaborators can use and extend `qgtools` with compiled backends, including external shared libraries.
+
+[View the tutorial →](https://psoerensen.github.io/qgtools/examples/hpc_examples/hpc_qgtools.html)
 
 
