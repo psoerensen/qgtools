@@ -51,10 +51,7 @@ subroutine mtgrsbed_core_f( &
     stop "Could not open BED file"
   end if
 
-  if (nthreads > 0) then
-    call omp_set_dynamic(.false.)
-    call omp_set_num_threads(nthreads)
-  end if
+  if (nthreads > 0) call omp_set_num_threads(nthreads)
 
 !$omp parallel private(i0, imax, mlen, ii, i, p, denom, &
 !$omp& j0, jmax, byte0, byte1, kb, pos, jbase, t0, tmax, &

@@ -11,7 +11,7 @@ void mtgrsbed_core(
     const double* b_snp,
     double* grs_flat,
     int nthreads,
-    int MG,
-    int JB,
-    int TB
+    int MG = 64,
+    int JB = 1024,
+    int TB = 32
 );

@@ -1,3 +1,5 @@
+#include "mtgrsbed_core.h"
+
 #include <cmath>
 #include <cstdio>
 #include <vector>
@@ -21,9 +23,9 @@ void mtgrsbed_core(
     const double* b_snp,
     double* grs_flat,
     int nthreads,
-    int MG = 64,
-    int JB = 1024,
-    int TB = 32
+    int MG,
+    int JB,
+    int TB
 ) {
   FILE* file_stream = std::fopen(file, "rb");
   if (!file_stream) {

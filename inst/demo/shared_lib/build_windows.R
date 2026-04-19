@@ -2,38 +2,61 @@
 # Windows: Build and test shared library
 # --------------------------------------------------
 
-# Path to demo directory (adjust if needed)
 demo_src <- system.file("demo/shared_lib", package = "qgtools")
-demo_dir <- file.path(tempdir(), "qgtools_demo")
+demo_root <- file.path(tempdir(), "qgtools_demo")
 
-dir.create(demo_dir, showWarnings = FALSE)
-file.copy(demo_src, demo_dir, recursive = TRUE)
+dir.create(demo_root, showWarnings = FALSE)
 
+# copy demo
+file.copy(demo_src, demo_root, recursive = TRUE)
+
+demo_dir <- file.path(demo_root, "shared_lib")
 setwd(demo_dir)
+
 cat("\nFiles before build:\n")
-print(list.files())
+print(list.files(recursive = TRUE))
 
-
-cat("Building shared library (Windows)...\n")
+cat("Building shared library...\n")
 system("make clean")
-system("make")
+status <- system("make")
+
+if (status != 0) {
+  stop("Build failed")
+}
 
 cat("\nFiles after build:\n")
 print(list.files())
 
+# -------------------------------
 # Load DLL
+# -------------------------------
 lib_path <- file.path(demo_dir, "libqgtools.dll")
 
-# Unload if already loaded
-if ("libqgtools" %in% names(getLoadedDLLs())) {
-  dyn.unload(lib_path)
+if (!file.exists(lib_path)) {
+  stop("libqgtools.dll not found")
+}
+
+# Unload if already loaded (safe)
+dlls <- getLoadedDLLs()
+if ("libqgtools" %in% names(dlls)) {
+  try(dyn.unload(dlls[["libqgtools"]]$path), silent = TRUE)
 }
 
 dyn.load(lib_path)
 
+# -------------------------------
 # Check symbols
+# -------------------------------
 cat("\nChecking symbols:\n")
-cat("mtgrsbed_core_c:", is.loaded("mtgrsbed_core_c"), "\n")
-cat("mtgrsbed_core_f:", is.loaded("mtgrsbed_core_f"), "\n")
 
-cat("\n Windows build OK\n")
+cat("lib_mtgrsbed_c:",
+    isTRUE(is.loaded("lib_mtgrsbed_c", PACKAGE = "libqgtools")), "\n")
+
+cat("lib_mtgrsbed_f:",
+    isTRUE(is.loaded("lib_mtgrsbed_f", PACKAGE = "libqgtools")), "\n")
+
+cat("libqgtools_version:",
+    isTRUE(is.loaded("libqgtools_version", PACKAGE = "libqgtools")), "\n")
+
+
+

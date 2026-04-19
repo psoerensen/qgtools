@@ -1,134 +1,92 @@
 # -------------------------------
 # Compilers
 # -------------------------------
-# C++ compiler
 CXX = g++
-
-# Fortran compiler
 FC  = gfortran
+CC  = gcc
 
-
-# Detect operating system (Linux / Darwin / Windows)
 UNAME_S := $(shell uname -s)
-
 
 # -------------------------------
 # OS-specific settings
 # -------------------------------
-# These control:
-# - library extension (.so / .dll / .dylib)
-# - position-independent code (needed for shared libs)
-# - linker flags
-# - remove command
-
 ifeq ($(UNAME_S),Linux)
-    EXT = so            # shared library extension
-    PIC = -fPIC         # required for shared libraries
-    SHARED = -shared    # build shared library
-    RM = rm -f
-endif
-
-ifeq ($(UNAME_S),Darwin)
-    EXT = dylib         # macOS shared library extension
+    EXT = so
     PIC = -fPIC
     SHARED = -shared
     RM = rm -f
 endif
 
-# Windows (Rtools / MinGW)
-ifeq ($(OS),Windows_NT)
-    EXT = dll
-    PIC =               # not needed on Windows
-    SHARED = -shared
-    RM = rm -f          # works under Rtools
+ifeq ($(UNAME_S),Darwin)
+    EXT = dylib
+    PIC = -fPIC
+    SHARED = -dynamiclib
+    RM = rm -f
 endif
 
+ifeq ($(OS),Windows_NT)
+    EXT = dll
+    PIC =
+    SHARED = -shared
+    RM = rm -f
+endif
 
 # -------------------------------
-# Compiler flags
+# R config
 # -------------------------------
-# -O3        : maximum optimization
-# -fopenmp   : enable OpenMP parallelism
-# $(PIC)     : position-independent code (Linux/macOS)
-# -Iinclude  : look for header files in ./include
+R_CPPFLAGS := $(shell R CMD config --cppflags)
+R_LDFLAGS  := $(shell R CMD config --ldflags)
 
-CXXFLAGS = -O3 -fopenmp $(PIC) -Iinclude
+# -------------------------------
+# Flags
+# -------------------------------
+CXXFLAGS = -O3 -fopenmp $(PIC) $(R_CPPFLAGS)
 FFLAGS   = -O3 -fopenmp $(PIC)
-
-
-# -------------------------------
-# Targets (what we build)
-# -------------------------------
-# Combined library (C++ + Fortran)
-LIB     = libqgtools.$(EXT)
-
-# C++-only library
-CPP_LIB = libqgc.$(EXT)
-
-# Fortran-only library
-F_LIB   = libqgf.$(EXT)
-
-# Object files (compiled but not yet linked)
-OBJS = grsbed_c.o grsbed_f.o
-
-
-# Default target: build everything
-all: $(CPP_LIB) $(F_LIB) $(LIB)
-
+CFLAGS   = $(R_CPPFLAGS)
 
 # -------------------------------
-# Combined library
+# Targets
 # -------------------------------
-# Build one shared library containing BOTH:
-#   - C++ code
-#   - Fortran code
-#
-# IMPORTANT:
-# We link with gfortran (FC), not g++, because:
-#   - gfortran automatically links Fortran runtime
-#   - we manually add C++ runtime via -lstdc++
-#
-# This ensures both:
-#   - libgfortran  (Fortran runtime)
-#   - libstdc++    (C++ runtime)
-# are available
+LIB = libqgtools.$(EXT)
 
+# IMPORTANT: include wrapper + init
+OBJS = \
+  mtgrsbed_core.o \
+  mtgrsbed_core_c.o \
+  mtgrsbed_core_f.o \
+  mtgrsbed_call.o \
+  libqgtools_init.o
+
+
+all: $(LIB)
+
+# -------------------------------
+# Link shared library (WITH R!)
+# -------------------------------
 $(LIB): $(OBJS)
-	$(FC) $(SHARED) $(OBJS) -o $(LIB) -fopenmp -lstdc++
-
+	$(FC) $(SHARED) $(OBJS) -o $(LIB) \
+	    -fopenmp -lstdc++ $(R_LDFLAGS)
 
 # -------------------------------
-# Object file compilation
+# Compilation rules
 # -------------------------------
-# Compile C++ source → object file
-# -c = compile only (no linking yet)
-
-grsbed_c.o: grsbed_c.cpp
+mtgrsbed_core.o: mtgrsbed_core.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-# Compile Fortran source → object file
-grsbed_f.o: grsbed_f.f90
+mtgrsbed_core_c.o: mtgrsbed_core_c.cpp
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+mtgrsbed_core_f.o: mtgrsbed_core_f.f90
 	$(FC) $(FFLAGS) -c $< -o $@
 
+mtgrsbed_call.o: mtgrsbed_call.cpp
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+libqgtools_init.o: libqgtools_init.c
+	$(CC) $(CFLAGS) -c $< -o $@
 
 # -------------------------------
-# Separate libraries (for demo purposes)
+# Clean
 # -------------------------------
-# These illustrate that we can build each backend independently
-
-# Build C++-only shared library
-$(CPP_LIB): grsbed_c.cpp
-	$(CXX) $(CXXFLAGS) $(SHARED) $< -o $@
-
-# Build Fortran-only shared library
-$(F_LIB): grsbed_f.f90
-	$(FC) $(FFLAGS) $(SHARED) $< -o $@
-
-
-# -------------------------------
-# Clean build artifacts
-# -------------------------------
-# Remove all compiled files
-
 clean:
 	$(RM) *.o *.so *.dll *.dylib
