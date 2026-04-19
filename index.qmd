@@ -529,4 +529,7 @@ These examples illustrate how complex legacy DMU models translate directly into
 qgtools while benefiting from a clearer and more modular model specification.
 
 
+### Advanced tutorial using C++, Fortran, and External libraries
+
+
 
