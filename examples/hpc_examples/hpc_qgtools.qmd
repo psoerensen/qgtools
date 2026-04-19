@@ -1,0 +1,185 @@
+---
+title: "qgtools: End-to-End Tutorial (Backends, HPC, and External Libraries)"
+format:
+  html:
+    toc: true
+    number-sections: true
+execute:
+  eval: false
+---
+
+## Introduction
+
+This tutorial demonstrates a complete workflow for computing genetic risk scores (GRS) using `qgtools`.
+
+It covers:
+
+- Internal backends (C++ and Fortran)
+- External high-performance backend (`libqgtools`)
+- OpenMP-based parallel execution
+- Benchmarking and validation
+- HPC-ready setup
+
+The goal is to show how a **single R interface** can scale seamlessly from a portable implementation to high-performance execution.
+
+---
+
+## Setup
+
+### Environment (Linux / HPC)
+
+```bash
+conda install -n base -c conda-forge mamba
+
+mamba create -n rcsg   -c conda-forge   r-base r-devtools r-remotes r-xml r-rcurl r-pkgbuild   zlib compilers make pkg-config "libblas=*=*mkl"
+
+conda activate rcsg
+```
+
+### HPC session
+
+```bash
+srun --pty -c 4 --mem=10g --time=20:00:00 --job-name=rcsg --account=csgtools bash
+```
+
+### Thread configuration
+
+```bash
+export OMP_NUM_THREADS=4
+export OMP_PROC_BIND=spread
+export OMP_PLACES=cores
+export OMP_DYNAMIC=FALSE
+
+export OPENBLAS_NUM_THREADS=1
+export MKL_NUM_THREADS=1
+```
+
+### Install and load R packages
+
+```r
+library(devtools)
+pak::pak("psoerensen/qgtools")
+
+library(qgtools)
+library(qgg)
+library(data.table)
+library(bench)
+```
+
+---
+
+## Data and Inputs
+
+```r
+setwd("/faststorage/project/csgtools/data/plink")
+
+files <- c("bed", "bim", "fam", "pheno", "covar")
+
+for (f in files) {
+  url <- sprintf(
+    "https://github.com/psoerensen/qgdata/raw/main/simulated_human_data/human.%s",
+    f
+  )
+  download.file(url, destfile = paste0("human.", f), mode = "wb")
+}
+
+Glist <- gprep(
+  study = "Example",
+  bedfiles = "human.bed",
+  bimfiles = "human.bim",
+  famfiles = "human.fam"
+)
+
+chr <- 1
+file <- Glist$bedfiles[chr]
+n <- Glist$n
+m <- Glist$mchr[chr]
+nt <- 50
+
+cls <- sample.int(m)
+af  <- runif(m, 0.05, 0.5)
+
+S <- matrix(rnorm(m * nt), nrow = m, ncol = nt)
+```
+
+---
+
+## Running the Model
+
+```r
+invisible(qgtools:::mtgrsbed(file, n, cls, af, S,
+                             nthreads = 12,
+                             backend = "internal_cpp"))
+
+invisible(qgtools:::mtgrsbed(file, n, cls, af, S,
+                             nthreads = 12,
+                             backend = "internal_fortran"))
+
+res <- bench::mark(
+  cpp = qgtools:::mtgrsbed(file, n, cls, af, S,
+                           backend = "internal_cpp"),
+  fortran = qgtools:::mtgrsbed(file, n, cls, af, S,
+                               backend = "internal_fortran"),
+  iterations = 5,
+  check = FALSE
+)
+
+print(res)
+```
+
+---
+
+## Validation
+
+```r
+grs_cpp <- qgtools:::mtgrsbed(file, n, cls, af, S,
+                              backend = "internal_cpp")
+
+grs_fortran <- qgtools:::mtgrsbed(file, n, cls, af, S,
+                                  backend = "internal_fortran")
+
+tol <- 1e-10
+stopifnot(isTRUE(all.equal(grs_cpp, grs_fortran, tolerance = tol)))
+```
+
+---
+
+## External Backend
+
+```r
+qgtools:::install_libqgtools()
+
+grs_external <- qgtools:::mtgrsbed(
+  file, n, cls, af, S,
+  backend = "external_cpp"
+)
+
+stopifnot(isTRUE(all.equal(grs_cpp, grs_external, tolerance = tol)))
+```
+
+---
+
+## Architecture
+
+```
+User (R)
+  ↓
+mtgrsbed()
+  ↓
+Backend selection
+  ↓
+----------------------------------------------
+| internal_cpp      (C++ implementation)     |
+| internal_fortran  (Fortran implementation) |
+| external_cpp      (shared library plugin)  |
+----------------------------------------------
+```
+
+---
+
+## Takeaways
+
+- Single R interface, multiple implementations
+- Portable → high-performance transition
+- Numerical consistency ensured
+- Modular and extensible design

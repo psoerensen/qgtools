@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>hps – qgtools</title>
+<title>qgtools: End-to-End Tutorial (Backends, HPC, and External Libraries) – qgtools</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -18,6 +18,41 @@ ul.task-list{list-style: none;}
 ul.task-list li input[type="checkbox"] {
 width: 0.8em;
 margin: 0 0.8em 0.2em -1em;  vertical-align: middle;
+}
+
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+}
+pre.numberSource { margin-left: 3em; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
 }
 </style>
 
@@ -3841,15 +3876,34 @@ vertical-align: -.125em;
 <div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
 <!-- sidebar -->
 <!-- margin-sidebar -->
-    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
-        
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction"><span class="header-section-number">1</span> Introduction</a></li>
+  <li><a href="#setup" id="toc-setup" class="nav-link" data-scroll-target="#setup"><span class="header-section-number">2</span> Setup</a>
+  <ul class="collapse">
+  <li><a href="#environment-linux-hpc" id="toc-environment-linux-hpc" class="nav-link" data-scroll-target="#environment-linux-hpc"><span class="header-section-number">2.1</span> Environment (Linux / HPC)</a></li>
+  <li><a href="#hpc-session" id="toc-hpc-session" class="nav-link" data-scroll-target="#hpc-session"><span class="header-section-number">2.2</span> HPC session</a></li>
+  <li><a href="#thread-configuration" id="toc-thread-configuration" class="nav-link" data-scroll-target="#thread-configuration"><span class="header-section-number">2.3</span> Thread configuration</a></li>
+  <li><a href="#install-and-load-r-packages" id="toc-install-and-load-r-packages" class="nav-link" data-scroll-target="#install-and-load-r-packages"><span class="header-section-number">2.4</span> Install and load R packages</a></li>
+  </ul></li>
+  <li><a href="#data-and-inputs" id="toc-data-and-inputs" class="nav-link" data-scroll-target="#data-and-inputs"><span class="header-section-number">3</span> Data and Inputs</a></li>
+  <li><a href="#running-the-model" id="toc-running-the-model" class="nav-link" data-scroll-target="#running-the-model"><span class="header-section-number">4</span> Running the Model</a></li>
+  <li><a href="#validation" id="toc-validation" class="nav-link" data-scroll-target="#validation"><span class="header-section-number">5</span> Validation</a></li>
+  <li><a href="#external-backend" id="toc-external-backend" class="nav-link" data-scroll-target="#external-backend"><span class="header-section-number">6</span> External Backend</a></li>
+  <li><a href="#architecture" id="toc-architecture" class="nav-link" data-scroll-target="#architecture"><span class="header-section-number">7</span> Architecture</a></li>
+  <li><a href="#takeaways" id="toc-takeaways" class="nav-link" data-scroll-target="#takeaways"><span class="header-section-number">8</span> Takeaways</a></li>
+  </ul>
+</nav>
     </div>
 <!-- main -->
 <main class="content" id="quarto-document-content">
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">hps</h1>
+<h1 class="title">qgtools: End-to-End Tutorial (Backends, HPC, and External Libraries)</h1>
 </div>
 
 
@@ -3866,8 +3920,161 @@ vertical-align: -.125em;
 </header>
 
 
+<section id="introduction" class="level2" data-number="1">
+<h2 data-number="1" class="anchored" data-anchor-id="introduction"><span class="header-section-number">1</span> Introduction</h2>
+<p>This tutorial demonstrates a complete workflow for computing genetic risk scores (GRS) using <code>qgtools</code>.</p>
+<p>It covers:</p>
+<ul>
+<li>Internal backends (C++ and Fortran)</li>
+<li>External high-performance backend (<code>libqgtools</code>)</li>
+<li>OpenMP-based parallel execution</li>
+<li>Benchmarking and validation</li>
+<li>HPC-ready setup</li>
+</ul>
+<p>The goal is to show how a <strong>single R interface</strong> can scale seamlessly from a portable implementation to high-performance execution.</p>
+<hr>
+</section>
+<section id="setup" class="level2" data-number="2">
+<h2 data-number="2" class="anchored" data-anchor-id="setup"><span class="header-section-number">2</span> Setup</h2>
+<section id="environment-linux-hpc" class="level3" data-number="2.1">
+<h3 data-number="2.1" class="anchored" data-anchor-id="environment-linux-hpc"><span class="header-section-number">2.1</span> Environment (Linux / HPC)</h3>
+<div class="sourceCode" id="cb1"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">conda</span> install <span class="at">-n</span> base <span class="at">-c</span> conda-forge mamba</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="ex">mamba</span> create <span class="at">-n</span> rcsg   <span class="at">-c</span> conda-forge   r-base r-devtools r-remotes r-xml r-rcurl r-pkgbuild   zlib compilers make pkg-config <span class="st">&quot;libblas=*=*mkl&quot;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="ex">conda</span> activate rcsg</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="hpc-session" class="level3" data-number="2.2">
+<h3 data-number="2.2" class="anchored" data-anchor-id="hpc-session"><span class="header-section-number">2.2</span> HPC session</h3>
+<div class="sourceCode" id="cb2"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">srun</span> <span class="at">--pty</span> <span class="at">-c</span> 4 <span class="at">--mem</span><span class="op">=</span>10g <span class="at">--time</span><span class="op">=</span>20:00:00 <span class="at">--job-name</span><span class="op">=</span>rcsg <span class="at">--account</span><span class="op">=</span>csgtools bash</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="thread-configuration" class="level3" data-number="2.3">
+<h3 data-number="2.3" class="anchored" data-anchor-id="thread-configuration"><span class="header-section-number">2.3</span> Thread configuration</h3>
+<div class="sourceCode" id="cb3"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">OMP_NUM_THREADS</span><span class="op">=</span>4</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">OMP_PROC_BIND</span><span class="op">=</span>spread</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">OMP_PLACES</span><span class="op">=</span>cores</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">OMP_DYNAMIC</span><span class="op">=</span>FALSE</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">OPENBLAS_NUM_THREADS</span><span class="op">=</span>1</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">MKL_NUM_THREADS</span><span class="op">=</span>1</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="install-and-load-r-packages" class="level3" data-number="2.4">
+<h3 data-number="2.4" class="anchored" data-anchor-id="install-and-load-r-packages"><span class="header-section-number">2.4</span> Install and load R packages</h3>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(devtools)</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>pak<span class="sc">::</span><span class="fu">pak</span>(<span class="st">&quot;psoerensen/qgtools&quot;</span>)</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(qgtools)</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(qgg)</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(data.table)</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(bench)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<hr>
+</section>
+</section>
+<section id="data-and-inputs" class="level2" data-number="3">
+<h2 data-number="3" class="anchored" data-anchor-id="data-and-inputs"><span class="header-section-number">3</span> Data and Inputs</h2>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">setwd</span>(<span class="st">&quot;/faststorage/project/csgtools/data/plink&quot;</span>)</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>files <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;bed&quot;</span>, <span class="st">&quot;bim&quot;</span>, <span class="st">&quot;fam&quot;</span>, <span class="st">&quot;pheno&quot;</span>, <span class="st">&quot;covar&quot;</span>)</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (f <span class="cf">in</span> files) {</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>  url <span class="ot">&lt;-</span> <span class="fu">sprintf</span>(</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;https://github.com/psoerensen/qgdata/raw/main/simulated_human_data/human.%s&quot;</span>,</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>    f</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">download.file</span>(url, <span class="at">destfile =</span> <span class="fu">paste0</span>(<span class="st">&quot;human.&quot;</span>, f), <span class="at">mode =</span> <span class="st">&quot;wb&quot;</span>)</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>Glist <span class="ot">&lt;-</span> <span class="fu">gprep</span>(</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">study =</span> <span class="st">&quot;Example&quot;</span>,</span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">bedfiles =</span> <span class="st">&quot;human.bed&quot;</span>,</span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>  <span class="at">bimfiles =</span> <span class="st">&quot;human.bim&quot;</span>,</span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>  <span class="at">famfiles =</span> <span class="st">&quot;human.fam&quot;</span></span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>chr <span class="ot">&lt;-</span> <span class="dv">1</span></span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>file <span class="ot">&lt;-</span> Glist<span class="sc">$</span>bedfiles[chr]</span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>n <span class="ot">&lt;-</span> Glist<span class="sc">$</span>n</span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>m <span class="ot">&lt;-</span> Glist<span class="sc">$</span>mchr[chr]</span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a>nt <span class="ot">&lt;-</span> <span class="dv">50</span></span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a>cls <span class="ot">&lt;-</span> <span class="fu">sample.int</span>(m)</span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a>af  <span class="ot">&lt;-</span> <span class="fu">runif</span>(m, <span class="fl">0.05</span>, <span class="fl">0.5</span>)</span>
+<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a>S <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">rnorm</span>(m <span class="sc">*</span> nt), <span class="at">nrow =</span> m, <span class="at">ncol =</span> nt)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<hr>
+</section>
+<section id="running-the-model" class="level2" data-number="4">
+<h2 data-number="4" class="anchored" data-anchor-id="running-the-model"><span class="header-section-number">4</span> Running the Model</h2>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">invisible</span>(qgtools<span class="sc">:::</span><span class="fu">mtgrsbed</span>(file, n, cls, af, S,</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>                             <span class="at">nthreads =</span> <span class="dv">12</span>,</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>                             <span class="at">backend =</span> <span class="st">&quot;internal_cpp&quot;</span>))</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="fu">invisible</span>(qgtools<span class="sc">:::</span><span class="fu">mtgrsbed</span>(file, n, cls, af, S,</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>                             <span class="at">nthreads =</span> <span class="dv">12</span>,</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>                             <span class="at">backend =</span> <span class="st">&quot;internal_fortran&quot;</span>))</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>res <span class="ot">&lt;-</span> bench<span class="sc">::</span><span class="fu">mark</span>(</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">cpp =</span> qgtools<span class="sc">:::</span><span class="fu">mtgrsbed</span>(file, n, cls, af, S,</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>                           <span class="at">backend =</span> <span class="st">&quot;internal_cpp&quot;</span>),</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">fortran =</span> qgtools<span class="sc">:::</span><span class="fu">mtgrsbed</span>(file, n, cls, af, S,</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>                               <span class="at">backend =</span> <span class="st">&quot;internal_fortran&quot;</span>),</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">iterations =</span> <span class="dv">5</span>,</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">check =</span> <span class="cn">FALSE</span></span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(res)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<hr>
+</section>
+<section id="validation" class="level2" data-number="5">
+<h2 data-number="5" class="anchored" data-anchor-id="validation"><span class="header-section-number">5</span> Validation</h2>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>grs_cpp <span class="ot">&lt;-</span> qgtools<span class="sc">:::</span><span class="fu">mtgrsbed</span>(file, n, cls, af, S,</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>                              <span class="at">backend =</span> <span class="st">&quot;internal_cpp&quot;</span>)</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>grs_fortran <span class="ot">&lt;-</span> qgtools<span class="sc">:::</span><span class="fu">mtgrsbed</span>(file, n, cls, af, S,</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>                                  <span class="at">backend =</span> <span class="st">&quot;internal_fortran&quot;</span>)</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>tol <span class="ot">&lt;-</span> <span class="fl">1e-10</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="fu">stopifnot</span>(<span class="fu">isTRUE</span>(<span class="fu">all.equal</span>(grs_cpp, grs_fortran, <span class="at">tolerance =</span> tol)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<hr>
+</section>
+<section id="external-backend" class="level2" data-number="6">
+<h2 data-number="6" class="anchored" data-anchor-id="external-backend"><span class="header-section-number">6</span> External Backend</h2>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>qgtools<span class="sc">:::</span><span class="fu">install_libqgtools</span>()</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>grs_external <span class="ot">&lt;-</span> qgtools<span class="sc">:::</span><span class="fu">mtgrsbed</span>(</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  file, n, cls, af, S,</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">backend =</span> <span class="st">&quot;external_cpp&quot;</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a><span class="fu">stopifnot</span>(<span class="fu">isTRUE</span>(<span class="fu">all.equal</span>(grs_cpp, grs_external, <span class="at">tolerance =</span> tol)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<hr>
+</section>
+<section id="architecture" class="level2" data-number="7">
+<h2 data-number="7" class="anchored" data-anchor-id="architecture"><span class="header-section-number">7</span> Architecture</h2>
+<pre><code>User (R)
+  ↓
+mtgrsbed()
+  ↓
+Backend selection
+  ↓
+----------------------------------------------
+| internal_cpp      (C++ implementation)     |
+| internal_fortran  (Fortran implementation) |
+| external_cpp      (shared library plugin)  |
+----------------------------------------------</code></pre>
+<hr>
+</section>
+<section id="takeaways" class="level2" data-number="8">
+<h2 data-number="8" class="anchored" data-anchor-id="takeaways"><span class="header-section-number">8</span> Takeaways</h2>
+<ul>
+<li>Single R interface, multiple implementations</li>
+<li>Portable → high-performance transition</li>
+<li>Numerical consistency ensured</li>
+<li>Modular and extensible design</li>
+</ul>
 
 
+</section>
 
 </main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">

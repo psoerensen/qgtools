@@ -98,6 +98,69 @@
     "text": "Classical quantitative genetics case studies (DMU examples)\nqgtools is designed to express a wide range of classical quantitative genetic models while cleanly separating model structure from estimation strategy.\nTo demonstrate compatibility with established workflows, several standard examples from DMU are reproduced below using qgtools. In each case, the same model specification can be estimated using REML, solver-based BLUP, or Bayesian inference by changing only the estimation task.\n\nDMU-based examples\n\nGenotype × feeding system interaction\nMulti-trait model with unrelated sires and G×E expressed through cross-trait covariance.\nView example →\nDirect and maternal genetic effects in sheep growth\nMulti-trait pedigree model with direct genetic, maternal genetic, and environmental effects.\nView example →\nRandom regression model for growth hormone profiles\nLongitudinal random regression model with permanent environmental and additive genetic effects using Legendre polynomials.\nView example →\n\nThese examples illustrate how complex legacy DMU models translate directly into qgtools while benefiting from a clearer and more modular model specification.\n\n\nAdvanced tutorial using C++, Fortran, and External libraries"
   },
   {
+    "objectID": "examples/hpc_examples/hpc_qgtools.html",
+    "href": "examples/hpc_examples/hpc_qgtools.html",
+    "title": "qgtools: End-to-End Tutorial (Backends, HPC, and External Libraries)",
+    "section": "",
+    "text": "This tutorial demonstrates a complete workflow for computing genetic risk scores (GRS) using qgtools.\nIt covers:\n\nInternal backends (C++ and Fortran)\nExternal high-performance backend (libqgtools)\nOpenMP-based parallel execution\nBenchmarking and validation\nHPC-ready setup\n\nThe goal is to show how a single R interface can scale seamlessly from a portable implementation to high-performance execution."
+  },
+  {
+    "objectID": "examples/hpc_examples/hpc_qgtools.html#introduction",
+    "href": "examples/hpc_examples/hpc_qgtools.html#introduction",
+    "title": "qgtools: End-to-End Tutorial (Backends, HPC, and External Libraries)",
+    "section": "",
+    "text": "This tutorial demonstrates a complete workflow for computing genetic risk scores (GRS) using qgtools.\nIt covers:\n\nInternal backends (C++ and Fortran)\nExternal high-performance backend (libqgtools)\nOpenMP-based parallel execution\nBenchmarking and validation\nHPC-ready setup\n\nThe goal is to show how a single R interface can scale seamlessly from a portable implementation to high-performance execution."
+  },
+  {
+    "objectID": "examples/hpc_examples/hpc_qgtools.html#setup",
+    "href": "examples/hpc_examples/hpc_qgtools.html#setup",
+    "title": "qgtools: End-to-End Tutorial (Backends, HPC, and External Libraries)",
+    "section": "2 Setup",
+    "text": "2 Setup\n\n2.1 Environment (Linux / HPC)\nconda install -n base -c conda-forge mamba\n\nmamba create -n rcsg   -c conda-forge   r-base r-devtools r-remotes r-xml r-rcurl r-pkgbuild   zlib compilers make pkg-config \"libblas=*=*mkl\"\n\nconda activate rcsg\n\n\n2.2 HPC session\nsrun --pty -c 4 --mem=10g --time=20:00:00 --job-name=rcsg --account=csgtools bash\n\n\n2.3 Thread configuration\nexport OMP_NUM_THREADS=4\nexport OMP_PROC_BIND=spread\nexport OMP_PLACES=cores\nexport OMP_DYNAMIC=FALSE\n\nexport OPENBLAS_NUM_THREADS=1\nexport MKL_NUM_THREADS=1\n\n\n2.4 Install and load R packages\nlibrary(devtools)\npak::pak(\"psoerensen/qgtools\")\n\nlibrary(qgtools)\nlibrary(qgg)\nlibrary(data.table)\nlibrary(bench)"
+  },
+  {
+    "objectID": "examples/hpc_examples/hpc_qgtools.html#data-and-inputs",
+    "href": "examples/hpc_examples/hpc_qgtools.html#data-and-inputs",
+    "title": "qgtools: End-to-End Tutorial (Backends, HPC, and External Libraries)",
+    "section": "3 Data and Inputs",
+    "text": "3 Data and Inputs\nsetwd(\"/faststorage/project/csgtools/data/plink\")\n\nfiles &lt;- c(\"bed\", \"bim\", \"fam\", \"pheno\", \"covar\")\n\nfor (f in files) {\n  url &lt;- sprintf(\n    \"https://github.com/psoerensen/qgdata/raw/main/simulated_human_data/human.%s\",\n    f\n  )\n  download.file(url, destfile = paste0(\"human.\", f), mode = \"wb\")\n}\n\nGlist &lt;- gprep(\n  study = \"Example\",\n  bedfiles = \"human.bed\",\n  bimfiles = \"human.bim\",\n  famfiles = \"human.fam\"\n)\n\nchr &lt;- 1\nfile &lt;- Glist$bedfiles[chr]\nn &lt;- Glist$n\nm &lt;- Glist$mchr[chr]\nnt &lt;- 50\n\ncls &lt;- sample.int(m)\naf  &lt;- runif(m, 0.05, 0.5)\n\nS &lt;- matrix(rnorm(m * nt), nrow = m, ncol = nt)"
+  },
+  {
+    "objectID": "examples/hpc_examples/hpc_qgtools.html#running-the-model",
+    "href": "examples/hpc_examples/hpc_qgtools.html#running-the-model",
+    "title": "qgtools: End-to-End Tutorial (Backends, HPC, and External Libraries)",
+    "section": "4 Running the Model",
+    "text": "4 Running the Model\ninvisible(qgtools:::mtgrsbed(file, n, cls, af, S,\n                             nthreads = 12,\n                             backend = \"internal_cpp\"))\n\ninvisible(qgtools:::mtgrsbed(file, n, cls, af, S,\n                             nthreads = 12,\n                             backend = \"internal_fortran\"))\n\nres &lt;- bench::mark(\n  cpp = qgtools:::mtgrsbed(file, n, cls, af, S,\n                           backend = \"internal_cpp\"),\n  fortran = qgtools:::mtgrsbed(file, n, cls, af, S,\n                               backend = \"internal_fortran\"),\n  iterations = 5,\n  check = FALSE\n)\n\nprint(res)"
+  },
+  {
+    "objectID": "examples/hpc_examples/hpc_qgtools.html#validation",
+    "href": "examples/hpc_examples/hpc_qgtools.html#validation",
+    "title": "qgtools: End-to-End Tutorial (Backends, HPC, and External Libraries)",
+    "section": "5 Validation",
+    "text": "5 Validation\ngrs_cpp &lt;- qgtools:::mtgrsbed(file, n, cls, af, S,\n                              backend = \"internal_cpp\")\n\ngrs_fortran &lt;- qgtools:::mtgrsbed(file, n, cls, af, S,\n                                  backend = \"internal_fortran\")\n\ntol &lt;- 1e-10\nstopifnot(isTRUE(all.equal(grs_cpp, grs_fortran, tolerance = tol)))"
+  },
+  {
+    "objectID": "examples/hpc_examples/hpc_qgtools.html#external-backend",
+    "href": "examples/hpc_examples/hpc_qgtools.html#external-backend",
+    "title": "qgtools: End-to-End Tutorial (Backends, HPC, and External Libraries)",
+    "section": "6 External Backend",
+    "text": "6 External Backend\nqgtools:::install_libqgtools()\n\ngrs_external &lt;- qgtools:::mtgrsbed(\n  file, n, cls, af, S,\n  backend = \"external_cpp\"\n)\n\nstopifnot(isTRUE(all.equal(grs_cpp, grs_external, tolerance = tol)))"
+  },
+  {
+    "objectID": "examples/hpc_examples/hpc_qgtools.html#architecture",
+    "href": "examples/hpc_examples/hpc_qgtools.html#architecture",
+    "title": "qgtools: End-to-End Tutorial (Backends, HPC, and External Libraries)",
+    "section": "7 Architecture",
+    "text": "7 Architecture\nUser (R)\n  ↓\nmtgrsbed()\n  ↓\nBackend selection\n  ↓\n----------------------------------------------\n| internal_cpp      (C++ implementation)     |\n| internal_fortran  (Fortran implementation) |\n| external_cpp      (shared library plugin)  |\n----------------------------------------------"
+  },
+  {
+    "objectID": "examples/hpc_examples/hpc_qgtools.html#takeaways",
+    "href": "examples/hpc_examples/hpc_qgtools.html#takeaways",
+    "title": "qgtools: End-to-End Tutorial (Backends, HPC, and External Libraries)",
+    "section": "8 Takeaways",
+    "text": "8 Takeaways\n\nSingle R interface, multiple implementations\nPortable → high-performance transition\nNumerical consistency ensured\nModular and extensible design"
+  },
+  {
     "objectID": "examples/dmu_examples/dmu_example_2.html",
     "href": "examples/dmu_examples/dmu_example_2.html",
     "title": "Case study: Direct and maternal genetic effects in sheep growth (DMU Example II)",
@@ -123,14 +186,14 @@
     "href": "examples/index.html",
     "title": "Examples",
     "section": "",
-    "text": "DMU Example 1\nDMU Example 2\nDMU Example RR"
+    "text": "DMU Example 1\nDMU Example 2\nDMU Example RR\nHPC"
   },
   {
     "objectID": "examples/index.html#examples",
     "href": "examples/index.html#examples",
     "title": "Examples",
     "section": "",
-    "text": "DMU Example 1\nDMU Example 2\nDMU Example RR"
+    "text": "DMU Example 1\nDMU Example 2\nDMU Example RR\nHPC"
   },
   {
     "objectID": "inst/examples/human/human.html",

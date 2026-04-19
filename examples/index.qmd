@@ -7,3 +7,4 @@ title: "Examples"
 - [DMU Example 1](dmu_examples/dmu_example_1.html)
 - [DMU Example 2](dmu_examples/dmu_example_2.html)
 - [DMU Example RR](dmu_examples/dmu_example_rr.html)
+- [HPC](hpc_examples/hpc_qgtools.html)
