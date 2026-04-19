@@ -1,0 +1,118 @@
+---
+title: "Case study: Direct and maternal genetic effects in sheep growth (DMU Example II)"
+output: html_document
+---
+
+
+This example reproduces *DMU Example II*, which analyzes growth traits in sheep
+using a multi-trait mixed model with **direct and maternal additive genetic effects**,
+environmental random effects, and pedigree-based covariance.
+
+The dataset consists of field-recorded growth traits with a pedigree containing
+both animals and their dams. Two traits are analyzed jointly.
+
+### Model description
+
+For each trait, the model is:
+
+$$
+y = \text{Month}
+  + \text{DamAge}
+  + \text{Litter}
+  + \text{Sex}
+  + \text{HY}
+  + \text{L\_Dam}
+  + \text{Dam\_Ge}
+  + \text{A\_Ge}
+  + e
+$$
+
+where:
+
+- `L_Dam` is a random environmental effect of litter within dam
+- `Dam_Ge` is the **maternal additive genetic effect**
+- `A_Ge` is the **direct additive genetic effect** of the animal
+- Genetic effects are correlated across traits through a pedigree
+- Residuals are correlated across traits
+
+This corresponds exactly to the model fitted in DMU.
+
+---
+
+### Data input
+
+```{r, eval = FALSE}
+## Observational data containing:
+## - traits: V1, V2 (e.g. weights at 2 and 4 months)
+## - fixed effects: Month, Damage, Litter, Sex, HY
+## - random-effect identifiers: A (animal), Dam, P (litter within dam)
+
+data <- makeDatalist(
+  source = "sheep_growth.txt",
+  format = "CSV"
+)
+
+## Two-trait model
+
+formulas <- list(
+  V1 = V1 ~ Month + Damage + Litter + Sex + HY +
+        (1 | L_Dam) + (1 | Dam_Ge) + (1 | A_Ge),
+
+  V2 = V2 ~ Month + Damage + Litter + Sex + HY +
+        (1 | L_Dam) + (1 | Dam_Ge) + (1 | A_Ge)
+)
+
+## Pedigree used for both direct and maternal genetic effects
+
+PED <- makePEDlist(
+  fnPED  = "pedigree.txt",
+  method = "S-D-NonInbred"
+)
+
+vcs <- list(
+  litter_env = vc(
+    variable = "L_Dam",
+    traits   = c("V1", "V2")
+  ),
+
+  maternal_genetic = vc(
+    variable = "Dam_Ge",
+    traits   = c("V1", "V2"),
+    kernel   = PED
+  ),
+
+  direct_genetic = vc(
+    variable = "A_Ge",
+    traits   = c("V1", "V2"),
+    kernel   = PED
+  ),
+
+  residual = vc(
+    variable = "residual",
+    traits   = c("V1", "V2")
+  )
+)
+
+fit_reml <- gfit(
+  formulas = formulas,
+  data     = data,
+  vc       = vcs,
+  task     = "reml"
+)
+
+## Solve mixed model equations with fixed variance components
+
+fit_solve <- gfit(
+  formulas = formulas,
+  data     = data,
+  vc       = vcs,
+  task     = "solve"
+)
+
+
+
+```
+
+
+
+
