@@ -1,32 +1,44 @@
 ---
-title: "qgtools: End-to-End Tutorial (Backends, HPC, and External Libraries)"
+title: "Advanced tutorial: integrating C++, Fortran, and external libraries"
 format:
   html:
     toc: true
-    number-sections: true
+    number-sections: false
 execute:
   eval: false
 ---
 
 ## Introduction
 
-This tutorial demonstrates a complete workflow for computing genetic risk scores (GRS) using `qgtools`.
+This tutorial demonstrates how to use `qgtools` as a flexible framework for integrating high-performance compiled code into R workflows.
 
-It covers:
+Rather than focusing on a specific application, the goal is to show how a single R interface can be backed by multiple interchangeable implementations written in C++, Fortran, and external shared libraries.
 
-- Internal backends (C++ and Fortran)
-- External high-performance backend (`libqgtools`)
-- OpenMP-based parallel execution
-- Benchmarking and validation
-- HPC-ready setup
+The tutorial illustrates how these backends can be:
 
-The goal is to show how a **single R interface** can scale seamlessly from a portable implementation to high-performance execution.
+- Interchanged transparently from R  
+- Benchmarked and validated against each other  
+- Scaled using OpenMP for multi-core execution  
+- Extended without modifying the core R package  
 
----
+Here is is demonstratde how to:
+
+- Call compiled code from R using `.Call()`  
+- Implement interchangeable backends with identical interfaces  
+- Build and load external shared libraries (`libqgtools`)  
+- Ensure numerical consistency across implementations  
+- Transition from portable reference code to optimized HPC implementations  
+
+This design enables users and collaborators to prototype algorithms, replace performance-critical components, and integrate custom implementations into a unified workflow.
+
+Although the examples use genomic data structures, the underlying architecture is general and applicable to a wide range of computational problems involving R and compiled code.
 
 ## Setup
 
 ### Environment (Linux / HPC)
+
+It is recommended to use a conda (or mamba) environment to ensure that all required tools for compiling and running C++ and Fortran code are available and consistent across systems.
+
 
 ```bash
 conda install -n base -c conda-forge mamba
@@ -35,6 +47,29 @@ mamba create -n rcsg   -c conda-forge   r-base r-devtools r-remotes r-xml r-rcur
 
 conda activate rcsg
 ```
+**Explanation**
+
+- `conda install -n base -c conda-forge mamba`  
+  Installs *mamba*, a faster drop-in replacement for conda.
+
+- `mamba create -n rcsg ...`  
+  Creates an isolated environment (`rcsg`) with:
+  - R and development tools  
+  - C++ and Fortran compilers  
+  - Build tools (`make`, `pkg-config`)  
+  - Required system libraries (`zlib`)  
+  - BLAS (MKL) for efficient numerical computation  
+
+- `conda activate rcsg`  
+  Activates the environment so all subsequent commands use the correct toolchain.
+
+Using a dedicated environment ensures:
+
+- A consistent toolchain across collaborators  
+- Reliable compilation of C++ and Fortran code  
+- External libraries can be built without system dependencies  
+- Reproducible results across systems  
+
 
 ### HPC session
 
@@ -43,6 +78,8 @@ srun --pty -c 4 --mem=10g --time=20:00:00 --job-name=rcsg --account=csgtools bas
 ```
 
 ### Thread configuration
+
+When using compiled C++ and Fortran code together with R, it is important to explicitly control how threads are used. Without proper configuration, different components (OpenMP and BLAS libraries) may compete for CPU resources, leading to oversubscription and degraded performance.
 
 ```bash
 export OMP_NUM_THREADS=4
@@ -53,7 +90,24 @@ export OMP_DYNAMIC=FALSE
 export OPENBLAS_NUM_THREADS=1
 export MKL_NUM_THREADS=1
 ```
+**Explanation**
 
+- `OMP_NUM_THREADS=4`  
+  Sets the number of threads used by OpenMP (i.e., your C++/Fortran kernels). This should typically match the number of CPU cores allocated to your job.
+
+- `OMP_PROC_BIND=spread`  
+  Distributes threads evenly across available CPU cores to improve cache usage and avoid contention.
+
+- `OMP_PLACES=cores`  
+  Ensures that threads are pinned to physical CPU cores rather than moving between them, improving performance stability.
+
+- `OMP_DYNAMIC=FALSE`  
+  Disables dynamic adjustment of thread counts, ensuring reproducible and predictable performance.
+
+- `OPENBLAS_NUM_THREADS=1` and `MKL_NUM_THREADS=1`  
+  Restrict BLAS libraries (used internally by R) to a single thread. This is critical to avoid conflicts with OpenMP, as otherwise both OpenMP and BLAS may try to use multiple cores simultaneously.
+  
+  
 ### Install and load R packages
 
 ```r
@@ -66,12 +120,24 @@ library(data.table)
 library(bench)
 ```
 
----
 
 ## Data and Inputs
 
+This section prepares the input data required for the compiled backends. The goal is to construct a minimal, self-contained example that mimics a typical workflow while remaining portable.
+
+This step constructs the full set of inputs required by the compiled backends:
+
+- A genotype file (`file`)  
+- Metadata (`n`, `m`, `cls`, `af`)  
+- A numerical matrix (`S`)  
+
+Together, these inputs define the interface between R and the compiled C++/Fortran implementations. Ensuring that this interface is well-defined and consistent is critical for enabling interchangeable backends and reproducible results.
+
+
+
 ```r
-setwd("/faststorage/project/csgtools/data/plink")
+data_dir <- "path/to/your/data/plink"
+dir.create(data_dir, recursive = TRUE, showWarnings = FALSE)
 
 files <- c("bed", "bim", "fam", "pheno", "covar")
 
@@ -80,7 +146,7 @@ for (f in files) {
     "https://github.com/psoerensen/qgdata/raw/main/simulated_human_data/human.%s",
     f
   )
-  download.file(url, destfile = paste0("human.", f), mode = "wb")
+  download.file(url, destfile = file.path(data_dir, paste0("human.", f)), mode = "wb")
 }
 
 Glist <- gprep(
@@ -96,15 +162,53 @@ n <- Glist$n
 m <- Glist$mchr[chr]
 nt <- 50
 
-cls <- sample.int(m)
-af  <- runif(m, 0.05, 0.5)
+cls <- 1:m
+af  <- Glist$af[[chr]]
 
 S <- matrix(rnorm(m * nt), nrow = m, ncol = nt)
 ```
 
----
+**Explanation**
+
+- `data_dir`  
+  Defines a user-specific directory where example data will be downloaded. This avoids hardcoding system-dependent paths.
+
+- `download.file(...)`  
+  Downloads PLINK genotype files (`.bed`, `.bim`, `.fam`) and associated phenotype/covariate data from a public repository.
+
+- `gprep(...)`  
+  Preprocesses genotype data and constructs a `Glist` object, which stores metadata and indexing structures used by downstream functions.
+
+- `file`, `n`, `m`  
+  Extract key information from `Glist`:
+  - `file`: path to the genotype file  
+  - `n`: number of individuals  
+  - `m`: number of SNPs for the selected chromosome  
+
+- `nt`  
+  Defines the number of traits (or response variables). This is used to construct a multi-trait input matrix.
+
+- `cls`  
+  SNP index vector (1-based). Determines which markers are included in the computation.
+
+- `af`  
+  Allele frequencies for the selected chromosome. These are typically used for scaling or normalization inside the compiled code.
+
+- `S`  
+  A SNP-by-trait matrix of effects. In this example, values are simulated, but in practice they would come from statistical models or prior analyses.
+
+
 
 ## Running the Model
+
+This section demonstrates how to execute the same computation using different compiled backends and compare their performance.
+
+- Multiple compiled implementations can be accessed through the same R interface  
+- Performance differences between C++ and Fortran implementations can be evaluated directly  
+- The system supports reproducible benchmarking in an HPC setting  
+
+This is a key part of the workflow: separating *interface (R)* from *implementation (C++/Fortran)* while allowing direct comparison and optimization.
+
 
 ```r
 invisible(qgtools:::mtgrsbed(file, n, cls, af, S,
@@ -127,9 +231,40 @@ res <- bench::mark(
 print(res)
 ```
 
----
+**Explanation**
+
+- `mtgrsbed(...)`  
+  This function provides a unified R interface to multiple compiled implementations. The computation itself is performed in C++ or Fortran, depending on the selected backend.
+
+- `backend = "internal_cpp"` and `backend = "internal_fortran"`  
+  These options select between two internal implementations:
+  - a C++ version  
+  - a Fortran version  
+  Both are expected to produce identical numerical results, but may differ in performance.
+
+- `nthreads = 12`  
+  Specifies the number of OpenMP threads used by the compiled code. This should typically match the number of CPU cores available to your job.
+
+- `invisible(...)`  
+  Runs the function without printing the result. This is useful for warm-up runs, ensuring that any initialization overhead (e.g., memory allocation, thread setup) does not affect benchmarking.
+
+- `bench::mark(...)`  
+  Benchmarks the execution time of the different backends:
+  - runs each implementation multiple times (`iterations = 5`)  
+  - reports timing statistics (e.g., median time, memory usage)  
+  - `check = FALSE` disables automatic result comparison to avoid overhead during benchmarking  
+
+
 
 ## Validation
+
+This step verifies that:
+
+- Different implementations produce numerically consistent results  
+- The interface behaves identically regardless of backend  
+- Performance optimizations do not compromise correctness  
+
+Establishing this consistency is essential when integrating multiple compiled backends, as it ensures that users can switch implementations without affecting results.
 
 ```r
 grs_cpp <- qgtools:::mtgrsbed(file, n, cls, af, S,
@@ -142,9 +277,35 @@ tol <- 1e-10
 stopifnot(isTRUE(all.equal(grs_cpp, grs_fortran, tolerance = tol)))
 ```
 
----
+**Explanation**
+
+- `grs_cpp <- mtgrsbed(..., backend = "internal_cpp")`  
+  Runs the computation using the internal C++ implementation.
+
+- `grs_fortran <- mtgrsbed(..., backend = "internal_fortran")`  
+  Runs the same computation using the internal Fortran implementation.
+
+- `all.equal(grs_cpp, grs_fortran, tolerance = tol)`  
+  Compares the results from the two implementations within a specified numerical tolerance. Small differences may arise due to floating-point arithmetic and differences in evaluation order.
+
+- `tol <- 1e-10`  
+  Defines the acceptable numerical tolerance for comparison. This threshold should be sufficiently small to ensure practical equivalence while accounting for machine precision.
+
+- `stopifnot(...)`  
+  Stops execution if the condition is not satisfied, ensuring that inconsistencies between implementations are detected immediately.
+
+
 
 ## External Backend
+
+This step demonstrates that:
+
+- High-performance implementations can be provided as external shared libraries  
+- Users can switch between internal and external implementations without changing their R code  
+- External code can be compiled, updated, and distributed independently of the R package  
+- Numerical correctness is preserved across implementations  
+
+This is a key feature of the architecture: enabling a modular system where performance-critical components can be developed and optimized separately while maintaining a stable and consistent R interface.
 
 ```r
 qgtools:::install_libqgtools()
@@ -156,8 +317,23 @@ grs_external <- qgtools:::mtgrsbed(
 
 stopifnot(isTRUE(all.equal(grs_cpp, grs_external, tolerance = tol)))
 ```
+**Explanation**
 
----
+- `qgtools:::install_libqgtools()`  
+  Compiles and installs an external shared library (`libqgtools`) that provides optimized implementations of the core computation. This step demonstrates how compiled code can be developed, built, and distributed independently of the main R package.
+
+- `backend = "external_cpp"`  
+  Selects the external C++ implementation from the shared library instead of the internal package implementation. From the user's perspective, the interface remains unchanged.
+
+- `grs_external <- mtgrsbed(...)`  
+  Executes the computation using the external backend. Internally, this calls a function loaded from the shared library via `.Call()`.
+
+- `all.equal(grs_cpp, grs_external, tolerance = tol)`  
+  Compares the results from the internal and external implementations within a specified tolerance to ensure numerical consistency.
+
+- `stopifnot(...)`  
+  Stops execution if the results differ beyond the acceptable tolerance, ensuring correctness of the external implementation.
+
 
 ## Architecture
 
@@ -168,14 +344,13 @@ mtgrsbed()
   ↓
 Backend selection
   ↓
-----------------------------------------------
-| internal_cpp      (C++ implementation)     |
-| internal_fortran  (Fortran implementation) |
-| external_cpp      (shared library plugin)  |
-----------------------------------------------
+-----------------------------------------------------------
+| internal_cpp      (C++ implementation)                  |
+| internal_fortran  (Fortran implementation)              |
+| external_cpp      (shared library plugin using C++)     |
+| external_fortrab  (shared library plugin using Fortran) |
+-----------------------------------------------------------
 ```
-
----
 
 ## Takeaways
 

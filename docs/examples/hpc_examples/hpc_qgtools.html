@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>qgtools: End-to-End Tutorial (Backends, HPC, and External Libraries) – qgtools</title>
+<title>Advanced tutorial: integrating C++, Fortran, and external libraries – qgtools</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -3881,20 +3881,20 @@ vertical-align: -.125em;
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction"><span class="header-section-number">1</span> Introduction</a></li>
-  <li><a href="#setup" id="toc-setup" class="nav-link" data-scroll-target="#setup"><span class="header-section-number">2</span> Setup</a>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
+  <li><a href="#setup" id="toc-setup" class="nav-link" data-scroll-target="#setup">Setup</a>
   <ul class="collapse">
-  <li><a href="#environment-linux-hpc" id="toc-environment-linux-hpc" class="nav-link" data-scroll-target="#environment-linux-hpc"><span class="header-section-number">2.1</span> Environment (Linux / HPC)</a></li>
-  <li><a href="#hpc-session" id="toc-hpc-session" class="nav-link" data-scroll-target="#hpc-session"><span class="header-section-number">2.2</span> HPC session</a></li>
-  <li><a href="#thread-configuration" id="toc-thread-configuration" class="nav-link" data-scroll-target="#thread-configuration"><span class="header-section-number">2.3</span> Thread configuration</a></li>
-  <li><a href="#install-and-load-r-packages" id="toc-install-and-load-r-packages" class="nav-link" data-scroll-target="#install-and-load-r-packages"><span class="header-section-number">2.4</span> Install and load R packages</a></li>
+  <li><a href="#environment-linux-hpc" id="toc-environment-linux-hpc" class="nav-link" data-scroll-target="#environment-linux-hpc">Environment (Linux / HPC)</a></li>
+  <li><a href="#hpc-session" id="toc-hpc-session" class="nav-link" data-scroll-target="#hpc-session">HPC session</a></li>
+  <li><a href="#thread-configuration" id="toc-thread-configuration" class="nav-link" data-scroll-target="#thread-configuration">Thread configuration</a></li>
+  <li><a href="#install-and-load-r-packages" id="toc-install-and-load-r-packages" class="nav-link" data-scroll-target="#install-and-load-r-packages">Install and load R packages</a></li>
   </ul></li>
-  <li><a href="#data-and-inputs" id="toc-data-and-inputs" class="nav-link" data-scroll-target="#data-and-inputs"><span class="header-section-number">3</span> Data and Inputs</a></li>
-  <li><a href="#running-the-model" id="toc-running-the-model" class="nav-link" data-scroll-target="#running-the-model"><span class="header-section-number">4</span> Running the Model</a></li>
-  <li><a href="#validation" id="toc-validation" class="nav-link" data-scroll-target="#validation"><span class="header-section-number">5</span> Validation</a></li>
-  <li><a href="#external-backend" id="toc-external-backend" class="nav-link" data-scroll-target="#external-backend"><span class="header-section-number">6</span> External Backend</a></li>
-  <li><a href="#architecture" id="toc-architecture" class="nav-link" data-scroll-target="#architecture"><span class="header-section-number">7</span> Architecture</a></li>
-  <li><a href="#takeaways" id="toc-takeaways" class="nav-link" data-scroll-target="#takeaways"><span class="header-section-number">8</span> Takeaways</a></li>
+  <li><a href="#data-and-inputs" id="toc-data-and-inputs" class="nav-link" data-scroll-target="#data-and-inputs">Data and Inputs</a></li>
+  <li><a href="#running-the-model" id="toc-running-the-model" class="nav-link" data-scroll-target="#running-the-model">Running the Model</a></li>
+  <li><a href="#validation" id="toc-validation" class="nav-link" data-scroll-target="#validation">Validation</a></li>
+  <li><a href="#external-backend" id="toc-external-backend" class="nav-link" data-scroll-target="#external-backend">External Backend</a></li>
+  <li><a href="#architecture" id="toc-architecture" class="nav-link" data-scroll-target="#architecture">Architecture</a></li>
+  <li><a href="#takeaways" id="toc-takeaways" class="nav-link" data-scroll-target="#takeaways">Takeaways</a></li>
   </ul>
 </nav>
     </div>
@@ -3903,7 +3903,7 @@ vertical-align: -.125em;
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">qgtools: End-to-End Tutorial (Backends, HPC, and External Libraries)</h1>
+<h1 class="title">Advanced tutorial: integrating C++, Fortran, and external libraries</h1>
 </div>
 
 
@@ -3920,36 +3920,83 @@ vertical-align: -.125em;
 </header>
 
 
-<section id="introduction" class="level2" data-number="1">
-<h2 data-number="1" class="anchored" data-anchor-id="introduction"><span class="header-section-number">1</span> Introduction</h2>
-<p>This tutorial demonstrates a complete workflow for computing genetic risk scores (GRS) using <code>qgtools</code>.</p>
-<p>It covers:</p>
+<section id="introduction" class="level2">
+<h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
+<p>This tutorial demonstrates how to use <code>qgtools</code> as a flexible framework for integrating high-performance compiled code into R workflows.</p>
+<p>Rather than focusing on a specific application, the goal is to show how a single R interface can be backed by multiple interchangeable implementations written in C++, Fortran, and external shared libraries.</p>
+<p>The tutorial illustrates how these backends can be:</p>
 <ul>
-<li>Internal backends (C++ and Fortran)</li>
-<li>External high-performance backend (<code>libqgtools</code>)</li>
-<li>OpenMP-based parallel execution</li>
-<li>Benchmarking and validation</li>
-<li>HPC-ready setup</li>
+<li>Interchanged transparently from R<br>
+</li>
+<li>Benchmarked and validated against each other<br>
+</li>
+<li>Scaled using OpenMP for multi-core execution<br>
+</li>
+<li>Extended without modifying the core R package</li>
 </ul>
-<p>The goal is to show how a <strong>single R interface</strong> can scale seamlessly from a portable implementation to high-performance execution.</p>
-<hr>
+<p>Here is is demonstratde how to:</p>
+<ul>
+<li>Call compiled code from R using <code>.Call()</code><br>
+</li>
+<li>Implement interchangeable backends with identical interfaces<br>
+</li>
+<li>Build and load external shared libraries (<code>libqgtools</code>)<br>
+</li>
+<li>Ensure numerical consistency across implementations<br>
+</li>
+<li>Transition from portable reference code to optimized HPC implementations</li>
+</ul>
+<p>This design enables users and collaborators to prototype algorithms, replace performance-critical components, and integrate custom implementations into a unified workflow.</p>
+<p>Although the examples use genomic data structures, the underlying architecture is general and applicable to a wide range of computational problems involving R and compiled code.</p>
 </section>
-<section id="setup" class="level2" data-number="2">
-<h2 data-number="2" class="anchored" data-anchor-id="setup"><span class="header-section-number">2</span> Setup</h2>
-<section id="environment-linux-hpc" class="level3" data-number="2.1">
-<h3 data-number="2.1" class="anchored" data-anchor-id="environment-linux-hpc"><span class="header-section-number">2.1</span> Environment (Linux / HPC)</h3>
+<section id="setup" class="level2">
+<h2 class="anchored" data-anchor-id="setup">Setup</h2>
+<section id="environment-linux-hpc" class="level3">
+<h3 class="anchored" data-anchor-id="environment-linux-hpc">Environment (Linux / HPC)</h3>
+<p>It is recommended to use a conda (or mamba) environment to ensure that all required tools for compiling and running C++ and Fortran code are available and consistent across systems.</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">conda</span> install <span class="at">-n</span> base <span class="at">-c</span> conda-forge mamba</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="ex">mamba</span> create <span class="at">-n</span> rcsg   <span class="at">-c</span> conda-forge   r-base r-devtools r-remotes r-xml r-rcurl r-pkgbuild   zlib compilers make pkg-config <span class="st">&quot;libblas=*=*mkl&quot;</span></span>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="ex">conda</span> activate rcsg</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p><strong>Explanation</strong></p>
+<ul>
+<li><p><code>conda install -n base -c conda-forge mamba</code><br>
+Installs <em>mamba</em>, a faster drop-in replacement for conda.</p></li>
+<li><p><code>mamba create -n rcsg ...</code><br>
+Creates an isolated environment (<code>rcsg</code>) with:</p>
+<ul>
+<li>R and development tools<br>
+</li>
+<li>C++ and Fortran compilers<br>
+</li>
+<li>Build tools (<code>make</code>, <code>pkg-config</code>)<br>
+</li>
+<li>Required system libraries (<code>zlib</code>)<br>
+</li>
+<li>BLAS (MKL) for efficient numerical computation</li>
+</ul></li>
+<li><p><code>conda activate rcsg</code><br>
+Activates the environment so all subsequent commands use the correct toolchain.</p></li>
+</ul>
+<p>Using a dedicated environment ensures:</p>
+<ul>
+<li>A consistent toolchain across collaborators<br>
+</li>
+<li>Reliable compilation of C++ and Fortran code<br>
+</li>
+<li>External libraries can be built without system dependencies<br>
+</li>
+<li>Reproducible results across systems</li>
+</ul>
 </section>
-<section id="hpc-session" class="level3" data-number="2.2">
-<h3 data-number="2.2" class="anchored" data-anchor-id="hpc-session"><span class="header-section-number">2.2</span> HPC session</h3>
+<section id="hpc-session" class="level3">
+<h3 class="anchored" data-anchor-id="hpc-session">HPC session</h3>
 <div class="sourceCode" id="cb2"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">srun</span> <span class="at">--pty</span> <span class="at">-c</span> 4 <span class="at">--mem</span><span class="op">=</span>10g <span class="at">--time</span><span class="op">=</span>20:00:00 <span class="at">--job-name</span><span class="op">=</span>rcsg <span class="at">--account</span><span class="op">=</span>csgtools bash</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
-<section id="thread-configuration" class="level3" data-number="2.3">
-<h3 data-number="2.3" class="anchored" data-anchor-id="thread-configuration"><span class="header-section-number">2.3</span> Thread configuration</h3>
+<section id="thread-configuration" class="level3">
+<h3 class="anchored" data-anchor-id="thread-configuration">Thread configuration</h3>
+<p>When using compiled C++ and Fortran code together with R, it is important to explicitly control how threads are used. Without proper configuration, different components (OpenMP and BLAS libraries) may compete for CPU resources, leading to oversubscription and degraded performance.</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">OMP_NUM_THREADS</span><span class="op">=</span>4</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">OMP_PROC_BIND</span><span class="op">=</span>spread</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">OMP_PLACES</span><span class="op">=</span>cores</span>
@@ -3957,9 +4004,22 @@ vertical-align: -.125em;
 <span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">OPENBLAS_NUM_THREADS</span><span class="op">=</span>1</span>
 <span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">MKL_NUM_THREADS</span><span class="op">=</span>1</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p><strong>Explanation</strong></p>
+<ul>
+<li><p><code>OMP_NUM_THREADS=4</code><br>
+Sets the number of threads used by OpenMP (i.e., your C++/Fortran kernels). This should typically match the number of CPU cores allocated to your job.</p></li>
+<li><p><code>OMP_PROC_BIND=spread</code><br>
+Distributes threads evenly across available CPU cores to improve cache usage and avoid contention.</p></li>
+<li><p><code>OMP_PLACES=cores</code><br>
+Ensures that threads are pinned to physical CPU cores rather than moving between them, improving performance stability.</p></li>
+<li><p><code>OMP_DYNAMIC=FALSE</code><br>
+Disables dynamic adjustment of thread counts, ensuring reproducible and predictable performance.</p></li>
+<li><p><code>OPENBLAS_NUM_THREADS=1</code> and <code>MKL_NUM_THREADS=1</code><br>
+Restrict BLAS libraries (used internally by R) to a single thread. This is critical to avoid conflicts with OpenMP, as otherwise both OpenMP and BLAS may try to use multiple cores simultaneously.</p></li>
+</ul>
 </section>
-<section id="install-and-load-r-packages" class="level3" data-number="2.4">
-<h3 data-number="2.4" class="anchored" data-anchor-id="install-and-load-r-packages"><span class="header-section-number">2.4</span> Install and load R packages</h3>
+<section id="install-and-load-r-packages" class="level3">
+<h3 class="anchored" data-anchor-id="install-and-load-r-packages">Install and load R packages</h3>
 <div class="sourceCode" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(devtools)</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>pak<span class="sc">::</span><span class="fu">pak</span>(<span class="st">&quot;psoerensen/qgtools&quot;</span>)</span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -3967,44 +4027,88 @@ vertical-align: -.125em;
 <span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(qgg)</span>
 <span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(data.table)</span>
 <span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(bench)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<hr>
 </section>
 </section>
-<section id="data-and-inputs" class="level2" data-number="3">
-<h2 data-number="3" class="anchored" data-anchor-id="data-and-inputs"><span class="header-section-number">3</span> Data and Inputs</h2>
-<div class="sourceCode" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">setwd</span>(<span class="st">&quot;/faststorage/project/csgtools/data/plink&quot;</span>)</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>files <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;bed&quot;</span>, <span class="st">&quot;bim&quot;</span>, <span class="st">&quot;fam&quot;</span>, <span class="st">&quot;pheno&quot;</span>, <span class="st">&quot;covar&quot;</span>)</span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (f <span class="cf">in</span> files) {</span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>  url <span class="ot">&lt;-</span> <span class="fu">sprintf</span>(</span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;https://github.com/psoerensen/qgdata/raw/main/simulated_human_data/human.%s&quot;</span>,</span>
-<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>    f</span>
-<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">download.file</span>(url, <span class="at">destfile =</span> <span class="fu">paste0</span>(<span class="st">&quot;human.&quot;</span>, f), <span class="at">mode =</span> <span class="st">&quot;wb&quot;</span>)</span>
-<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>Glist <span class="ot">&lt;-</span> <span class="fu">gprep</span>(</span>
-<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">study =</span> <span class="st">&quot;Example&quot;</span>,</span>
-<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">bedfiles =</span> <span class="st">&quot;human.bed&quot;</span>,</span>
-<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>  <span class="at">bimfiles =</span> <span class="st">&quot;human.bim&quot;</span>,</span>
-<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>  <span class="at">famfiles =</span> <span class="st">&quot;human.fam&quot;</span></span>
-<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>chr <span class="ot">&lt;-</span> <span class="dv">1</span></span>
-<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>file <span class="ot">&lt;-</span> Glist<span class="sc">$</span>bedfiles[chr]</span>
-<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>n <span class="ot">&lt;-</span> Glist<span class="sc">$</span>n</span>
-<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>m <span class="ot">&lt;-</span> Glist<span class="sc">$</span>mchr[chr]</span>
-<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a>nt <span class="ot">&lt;-</span> <span class="dv">50</span></span>
-<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a>cls <span class="ot">&lt;-</span> <span class="fu">sample.int</span>(m)</span>
-<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a>af  <span class="ot">&lt;-</span> <span class="fu">runif</span>(m, <span class="fl">0.05</span>, <span class="fl">0.5</span>)</span>
-<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a>S <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">rnorm</span>(m <span class="sc">*</span> nt), <span class="at">nrow =</span> m, <span class="at">ncol =</span> nt)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<hr>
+<section id="data-and-inputs" class="level2">
+<h2 class="anchored" data-anchor-id="data-and-inputs">Data and Inputs</h2>
+<p>This section prepares the input data required for the compiled backends. The goal is to construct a minimal, self-contained example that mimics a typical workflow while remaining portable.</p>
+<p>This step constructs the full set of inputs required by the compiled backends:</p>
+<ul>
+<li>A genotype file (<code>file</code>)<br>
+</li>
+<li>Metadata (<code>n</code>, <code>m</code>, <code>cls</code>, <code>af</code>)<br>
+</li>
+<li>A numerical matrix (<code>S</code>)</li>
+</ul>
+<p>Together, these inputs define the interface between R and the compiled C++/Fortran implementations. Ensuring that this interface is well-defined and consistent is critical for enabling interchangeable backends and reproducible results.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>data_dir <span class="ot">&lt;-</span> <span class="st">&quot;path/to/your/data/plink&quot;</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">dir.create</span>(data_dir, <span class="at">recursive =</span> <span class="cn">TRUE</span>, <span class="at">showWarnings =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>files <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;bed&quot;</span>, <span class="st">&quot;bim&quot;</span>, <span class="st">&quot;fam&quot;</span>, <span class="st">&quot;pheno&quot;</span>, <span class="st">&quot;covar&quot;</span>)</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (f <span class="cf">in</span> files) {</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>  url <span class="ot">&lt;-</span> <span class="fu">sprintf</span>(</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;https://github.com/psoerensen/qgdata/raw/main/simulated_human_data/human.%s&quot;</span>,</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>    f</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">download.file</span>(url, <span class="at">destfile =</span> <span class="fu">file.path</span>(data_dir, <span class="fu">paste0</span>(<span class="st">&quot;human.&quot;</span>, f)), <span class="at">mode =</span> <span class="st">&quot;wb&quot;</span>)</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>Glist <span class="ot">&lt;-</span> <span class="fu">gprep</span>(</span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">study =</span> <span class="st">&quot;Example&quot;</span>,</span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>  <span class="at">bedfiles =</span> <span class="st">&quot;human.bed&quot;</span>,</span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>  <span class="at">bimfiles =</span> <span class="st">&quot;human.bim&quot;</span>,</span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>  <span class="at">famfiles =</span> <span class="st">&quot;human.fam&quot;</span></span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>chr <span class="ot">&lt;-</span> <span class="dv">1</span></span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>file <span class="ot">&lt;-</span> Glist<span class="sc">$</span>bedfiles[chr]</span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>n <span class="ot">&lt;-</span> Glist<span class="sc">$</span>n</span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a>m <span class="ot">&lt;-</span> Glist<span class="sc">$</span>mchr[chr]</span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a>nt <span class="ot">&lt;-</span> <span class="dv">50</span></span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a>cls <span class="ot">&lt;-</span> <span class="dv">1</span><span class="sc">:</span>m</span>
+<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a>af  <span class="ot">&lt;-</span> Glist<span class="sc">$</span>af[[chr]]</span>
+<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a>S <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">rnorm</span>(m <span class="sc">*</span> nt), <span class="at">nrow =</span> m, <span class="at">ncol =</span> nt)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p><strong>Explanation</strong></p>
+<ul>
+<li><p><code>data_dir</code><br>
+Defines a user-specific directory where example data will be downloaded. This avoids hardcoding system-dependent paths.</p></li>
+<li><p><code>download.file(...)</code><br>
+Downloads PLINK genotype files (<code>.bed</code>, <code>.bim</code>, <code>.fam</code>) and associated phenotype/covariate data from a public repository.</p></li>
+<li><p><code>gprep(...)</code><br>
+Preprocesses genotype data and constructs a <code>Glist</code> object, which stores metadata and indexing structures used by downstream functions.</p></li>
+<li><p><code>file</code>, <code>n</code>, <code>m</code><br>
+Extract key information from <code>Glist</code>:</p>
+<ul>
+<li><code>file</code>: path to the genotype file<br>
+</li>
+<li><code>n</code>: number of individuals<br>
+</li>
+<li><code>m</code>: number of SNPs for the selected chromosome</li>
+</ul></li>
+<li><p><code>nt</code><br>
+Defines the number of traits (or response variables). This is used to construct a multi-trait input matrix.</p></li>
+<li><p><code>cls</code><br>
+SNP index vector (1-based). Determines which markers are included in the computation.</p></li>
+<li><p><code>af</code><br>
+Allele frequencies for the selected chromosome. These are typically used for scaling or normalization inside the compiled code.</p></li>
+<li><p><code>S</code><br>
+A SNP-by-trait matrix of effects. In this example, values are simulated, but in practice they would come from statistical models or prior analyses.</p></li>
+</ul>
 </section>
-<section id="running-the-model" class="level2" data-number="4">
-<h2 data-number="4" class="anchored" data-anchor-id="running-the-model"><span class="header-section-number">4</span> Running the Model</h2>
+<section id="running-the-model" class="level2">
+<h2 class="anchored" data-anchor-id="running-the-model">Running the Model</h2>
+<p>This section demonstrates how to execute the same computation using different compiled backends and compare their performance.</p>
+<ul>
+<li>Multiple compiled implementations can be accessed through the same R interface<br>
+</li>
+<li>Performance differences between C++ and Fortran implementations can be evaluated directly<br>
+</li>
+<li>The system supports reproducible benchmarking in an HPC setting</li>
+</ul>
+<p>This is a key part of the workflow: separating <em>interface (R)</em> from <em>implementation (C++/Fortran)</em> while allowing direct comparison and optimization.</p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">invisible</span>(qgtools<span class="sc">:::</span><span class="fu">mtgrsbed</span>(file, n, cls, af, S,</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>                             <span class="at">nthreads =</span> <span class="dv">12</span>,</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>                             <span class="at">backend =</span> <span class="st">&quot;internal_cpp&quot;</span>))</span>
@@ -4023,10 +4127,44 @@ vertical-align: -.125em;
 <span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>)</span>
 <span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(res)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<hr>
+<p><strong>Explanation</strong></p>
+<ul>
+<li><p><code>mtgrsbed(...)</code><br>
+This function provides a unified R interface to multiple compiled implementations. The computation itself is performed in C++ or Fortran, depending on the selected backend.</p></li>
+<li><p><code>backend = &quot;internal_cpp&quot;</code> and <code>backend = &quot;internal_fortran&quot;</code><br>
+These options select between two internal implementations:</p>
+<ul>
+<li>a C++ version<br>
+</li>
+<li>a Fortran version<br>
+Both are expected to produce identical numerical results, but may differ in performance.</li>
+</ul></li>
+<li><p><code>nthreads = 12</code><br>
+Specifies the number of OpenMP threads used by the compiled code. This should typically match the number of CPU cores available to your job.</p></li>
+<li><p><code>invisible(...)</code><br>
+Runs the function without printing the result. This is useful for warm-up runs, ensuring that any initialization overhead (e.g., memory allocation, thread setup) does not affect benchmarking.</p></li>
+<li><p><code>bench::mark(...)</code><br>
+Benchmarks the execution time of the different backends:</p>
+<ul>
+<li>runs each implementation multiple times (<code>iterations = 5</code>)<br>
+</li>
+<li>reports timing statistics (e.g., median time, memory usage)<br>
+</li>
+<li><code>check = FALSE</code> disables automatic result comparison to avoid overhead during benchmarking</li>
+</ul></li>
+</ul>
 </section>
-<section id="validation" class="level2" data-number="5">
-<h2 data-number="5" class="anchored" data-anchor-id="validation"><span class="header-section-number">5</span> Validation</h2>
+<section id="validation" class="level2">
+<h2 class="anchored" data-anchor-id="validation">Validation</h2>
+<p>This step verifies that:</p>
+<ul>
+<li>Different implementations produce numerically consistent results<br>
+</li>
+<li>The interface behaves identically regardless of backend<br>
+</li>
+<li>Performance optimizations do not compromise correctness</li>
+</ul>
+<p>Establishing this consistency is essential when integrating multiple compiled backends, as it ensures that users can switch implementations without affecting results.</p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>grs_cpp <span class="ot">&lt;-</span> qgtools<span class="sc">:::</span><span class="fu">mtgrsbed</span>(file, n, cls, af, S,</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>                              <span class="at">backend =</span> <span class="st">&quot;internal_cpp&quot;</span>)</span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -4035,10 +4173,33 @@ vertical-align: -.125em;
 <span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>tol <span class="ot">&lt;-</span> <span class="fl">1e-10</span></span>
 <span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="fu">stopifnot</span>(<span class="fu">isTRUE</span>(<span class="fu">all.equal</span>(grs_cpp, grs_fortran, <span class="at">tolerance =</span> tol)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<hr>
+<p><strong>Explanation</strong></p>
+<ul>
+<li><p><code>grs_cpp &lt;- mtgrsbed(..., backend = &quot;internal_cpp&quot;)</code><br>
+Runs the computation using the internal C++ implementation.</p></li>
+<li><p><code>grs_fortran &lt;- mtgrsbed(..., backend = &quot;internal_fortran&quot;)</code><br>
+Runs the same computation using the internal Fortran implementation.</p></li>
+<li><p><code>all.equal(grs_cpp, grs_fortran, tolerance = tol)</code><br>
+Compares the results from the two implementations within a specified numerical tolerance. Small differences may arise due to floating-point arithmetic and differences in evaluation order.</p></li>
+<li><p><code>tol &lt;- 1e-10</code><br>
+Defines the acceptable numerical tolerance for comparison. This threshold should be sufficiently small to ensure practical equivalence while accounting for machine precision.</p></li>
+<li><p><code>stopifnot(...)</code><br>
+Stops execution if the condition is not satisfied, ensuring that inconsistencies between implementations are detected immediately.</p></li>
+</ul>
 </section>
-<section id="external-backend" class="level2" data-number="6">
-<h2 data-number="6" class="anchored" data-anchor-id="external-backend"><span class="header-section-number">6</span> External Backend</h2>
+<section id="external-backend" class="level2">
+<h2 class="anchored" data-anchor-id="external-backend">External Backend</h2>
+<p>This step demonstrates that:</p>
+<ul>
+<li>High-performance implementations can be provided as external shared libraries<br>
+</li>
+<li>Users can switch between internal and external implementations without changing their R code<br>
+</li>
+<li>External code can be compiled, updated, and distributed independently of the R package<br>
+</li>
+<li>Numerical correctness is preserved across implementations</li>
+</ul>
+<p>This is a key feature of the architecture: enabling a modular system where performance-critical components can be developed and optimized separately while maintaining a stable and consistent R interface.</p>
 <div class="sourceCode" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>qgtools<span class="sc">:::</span><span class="fu">install_libqgtools</span>()</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>grs_external <span class="ot">&lt;-</span> qgtools<span class="sc">:::</span><span class="fu">mtgrsbed</span>(</span>
@@ -4047,25 +4208,37 @@ vertical-align: -.125em;
 <span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>)</span>
 <span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a><span class="fu">stopifnot</span>(<span class="fu">isTRUE</span>(<span class="fu">all.equal</span>(grs_cpp, grs_external, <span class="at">tolerance =</span> tol)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<hr>
+<p><strong>Explanation</strong></p>
+<ul>
+<li><p><code>qgtools:::install_libqgtools()</code><br>
+Compiles and installs an external shared library (<code>libqgtools</code>) that provides optimized implementations of the core computation. This step demonstrates how compiled code can be developed, built, and distributed independently of the main R package.</p></li>
+<li><p><code>backend = &quot;external_cpp&quot;</code><br>
+Selects the external C++ implementation from the shared library instead of the internal package implementation. From the user’s perspective, the interface remains unchanged.</p></li>
+<li><p><code>grs_external &lt;- mtgrsbed(...)</code><br>
+Executes the computation using the external backend. Internally, this calls a function loaded from the shared library via <code>.Call()</code>.</p></li>
+<li><p><code>all.equal(grs_cpp, grs_external, tolerance = tol)</code><br>
+Compares the results from the internal and external implementations within a specified tolerance to ensure numerical consistency.</p></li>
+<li><p><code>stopifnot(...)</code><br>
+Stops execution if the results differ beyond the acceptable tolerance, ensuring correctness of the external implementation.</p></li>
+</ul>
 </section>
-<section id="architecture" class="level2" data-number="7">
-<h2 data-number="7" class="anchored" data-anchor-id="architecture"><span class="header-section-number">7</span> Architecture</h2>
+<section id="architecture" class="level2">
+<h2 class="anchored" data-anchor-id="architecture">Architecture</h2>
 <pre><code>User (R)
   ↓
 mtgrsbed()
   ↓
 Backend selection
   ↓
-----------------------------------------------
-| internal_cpp      (C++ implementation)     |
-| internal_fortran  (Fortran implementation) |
-| external_cpp      (shared library plugin)  |
-----------------------------------------------</code></pre>
-<hr>
+-----------------------------------------------------------
+| internal_cpp      (C++ implementation)                  |
+| internal_fortran  (Fortran implementation)              |
+| external_cpp      (shared library plugin using C++)     |
+| external_fortrab  (shared library plugin using Fortran) |
+-----------------------------------------------------------</code></pre>
 </section>
-<section id="takeaways" class="level2" data-number="8">
-<h2 data-number="8" class="anchored" data-anchor-id="takeaways"><span class="header-section-number">8</span> Takeaways</h2>
+<section id="takeaways" class="level2">
+<h2 class="anchored" data-anchor-id="takeaways">Takeaways</h2>
 <ul>
 <li>Single R interface, multiple implementations</li>
 <li>Portable → high-performance transition</li>
