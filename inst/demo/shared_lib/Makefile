@@ -65,7 +65,8 @@ all: $(LIB)
 # -------------------------------
 $(LIB): $(OBJS)
 	$(FC) $(SHARED) $(OBJS) -o $(LIB) \
-	    -fopenmp -lstdc++ $(R_LDFLAGS)
+	    -fopenmp -lstdc++
+
 
 # -------------------------------
 # Compilation rules
