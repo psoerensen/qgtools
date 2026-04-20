@@ -10,7 +10,8 @@ Build:
   make
 
 Build in R:
-  see build_shared_lib.R
+  see build_unix.R
+  see build_windows.R
 
 Purpose:
 - illustrate shared library design

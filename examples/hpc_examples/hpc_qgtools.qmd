@@ -394,7 +394,7 @@ The `qgtools` repository is organized to clearly separate:
 - External shared library implementations
 
 **Core package code (`src/`)**
-
+[View source on GitHub](https://github.com/psoerensen/qgtools/tree/main/src)
 ```text
 qgtools/src/
 ```
@@ -411,11 +411,10 @@ This is the standard way to integrate compiled code into an R package.
 
 
 **External library example (`inst/demo/shared_lib/`)**
-
+[View source on GitHub](https://github.com/psoerensen/qgtools/tree/main/inst/demo/shared_lib)
 ```text
 qgtools/inst/demo/shared_lib/
 ```
-
 This directory contains a standalone example of an external backend:
 
 - `mtgrsbed_core.cpp` / `.f90` → core computational kernels  
