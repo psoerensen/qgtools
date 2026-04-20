@@ -4079,7 +4079,7 @@ window.Quarto = {
 <h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
 <p>This tutorial demonstrates how to use <code>qgtools</code> as a flexible framework for integrating high-performance compiled code into R workflows.</p>
 <p>Rather than focusing on a specific application, the goal is to show how a single R interface can be backed by multiple interchangeable implementations written in C++, Fortran, and external shared libraries.</p>
-<p>The tutorial illustrates how these backends can be:</p>
+<p>Here it is demonstrated how to:</p>
 <ul>
 <li>Interchanged transparently from R<br>
 </li>
@@ -4089,7 +4089,7 @@ window.Quarto = {
 </li>
 <li>Extended without modifying the core R package</li>
 </ul>
-<p>Here it is demonstrated how to:</p>
+<p>This tutorial demonstrates how to:</p>
 <ul>
 <li>Call compiled code from R using <code>.Call()</code><br>
 </li>
@@ -4102,7 +4102,7 @@ window.Quarto = {
 <li>Transition from portable reference code to optimized HPC implementations</li>
 </ul>
 <p>This design enables users and collaborators to prototype algorithms, replace performance-critical components, and integrate custom implementations into a unified workflow.</p>
-<p>In the following section, we motivate this framework using polygenic risk score (PRS) computation, a simple operation that becomes computationally demanding at biobank scale.</p>
+<p>In the following section, this framework is motivated using polygenic risk score (PRS) computation, a simple operation that becomes computationally demanding at biobank scale.</p>
 <p>Although the examples use genomic data structures, the underlying architecture is general and applicable to a wide range of computational problems involving R and compiled code.</p>
 </section>
 <section id="motivation" class="level2">
@@ -4193,6 +4193,7 @@ Creates an isolated environment (<code>rcsg</code>) with:</p>
 <li><p><code>conda activate rcsg</code><br>
 Activates the environment so all subsequent commands use the correct toolchain.</p></li>
 </ul>
+<p><strong>Why this matters</strong></p>
 <p>Using a dedicated environment ensures:</p>
 <ul>
 <li>A consistent toolchain across collaborators<br>
@@ -4245,7 +4246,7 @@ Restrict BLAS libraries (used internally by R) to a single thread. This is criti
 </section>
 <section id="data-and-inputs" class="level2">
 <h2 class="anchored" data-anchor-id="data-and-inputs">Data and Inputs</h2>
-<p>This section prepares the input data required for the compiled backends by constructing a minimal, portable example.</p>
+<p>This section prepares the input data required for the compiled backends using a minimal, portable example.</p>
 <ul>
 <li>A genotype file (<code>file</code>)<br>
 </li>
@@ -4314,13 +4315,6 @@ A SNP-by-trait matrix of effects. In this example, values are simulated, but in 
 <section id="running-the-model" class="level2">
 <h2 class="anchored" data-anchor-id="running-the-model">Running the Model</h2>
 <p>This section demonstrates how to execute the same computation using different compiled backends and compare their performance.</p>
-<ul>
-<li>Multiple compiled implementations can be accessed through the same R interface<br>
-</li>
-<li>Performance differences between C++ and Fortran implementations can be evaluated directly<br>
-</li>
-<li>The system supports reproducible benchmarking in an HPC setting</li>
-</ul>
 <p>This is a key part of the workflow: separating <em>interface (R)</em> from <em>implementation (C++/Fortran)</em> while allowing direct comparison and optimization.</p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">invisible</span>(qgtools<span class="sc">:::</span><span class="fu">mtgrsbed</span>(file, n, cls, af, S,</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>                             <span class="at">nthreads =</span> <span class="dv">12</span>,</span>
@@ -4437,7 +4431,7 @@ Stops execution if the results differ beyond the acceptable tolerance, ensuring 
 </section>
 <section id="architecture" class="level2">
 <h2 class="anchored" data-anchor-id="architecture">Architecture</h2>
-<p>The following diagram summarizes how the R interface is connected to different compiled backends:</p>
+<p>The following diagram summarizes how the R interface is connected to different compiled backends in <code>qgtools</code>:</p>
 <pre><code>User (R)
   ↓
 mtgrsbed()
@@ -4514,6 +4508,7 @@ Backend selection
 <section id="extending-the-framework" class="level2">
 <h2 class="anchored" data-anchor-id="extending-the-framework">Extending the framework</h2>
 <p>One of the main advantages of the <code>qgtools</code> design is that new high-performance implementations can be added without modifying the user-facing R interface.</p>
+<p>All backends must follow the same input/output interface, which enables seamless interchangeability.</p>
 <p>This section outlines how to integrate custom C++ or Fortran code and expose it through the same workflow.</p>
 <section id="adding-a-new-c-implementation" class="level3">
 <h3 class="anchored" data-anchor-id="adding-a-new-c-implementation">1. Adding a new C++ implementation</h3>

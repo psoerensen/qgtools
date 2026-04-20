@@ -14,14 +14,14 @@ This tutorial demonstrates how to use `qgtools` as a flexible framework for inte
 
 Rather than focusing on a specific application, the goal is to show how a single R interface can be backed by multiple interchangeable implementations written in C++, Fortran, and external shared libraries.
 
-The tutorial illustrates how these backends can be:
+Here it is demonstrated how to:
 
 - Interchanged transparently from R  
 - Benchmarked and validated against each other  
 - Scaled using OpenMP for multi-core execution  
 - Extended without modifying the core R package  
 
-Here it is demonstrated how to:
+This tutorial demonstrates how to:
 
 - Call compiled code from R using `.Call()`  
 - Implement interchangeable backends with identical interfaces  
@@ -31,9 +31,10 @@ Here it is demonstrated how to:
 
 This design enables users and collaborators to prototype algorithms, replace performance-critical components, and integrate custom implementations into a unified workflow.
 
-In the following section, we motivate this framework using polygenic risk score (PRS) computation, a simple operation that becomes computationally demanding at biobank scale.
+In the following section, this framework is motivated using polygenic risk score (PRS) computation, a simple operation that becomes computationally demanding at biobank scale.
 
 Although the examples use genomic data structures, the underlying architecture is general and applicable to a wide range of computational problems involving R and compiled code.
+
 
 ## Motivation
 
@@ -121,6 +122,9 @@ conda activate rcsg
 - `conda activate rcsg`  
   Activates the environment so all subsequent commands use the correct toolchain.
 
+
+**Why this matters**
+
 Using a dedicated environment ensures:
 
 - A consistent toolchain across collaborators  
@@ -181,14 +185,13 @@ library(bench)
 
 ## Data and Inputs
 
-This section prepares the input data required for the compiled backends by constructing a minimal, portable example.
+This section prepares the input data required for the compiled backends using a minimal, portable example.
 
 - A genotype file (`file`)  
 - Metadata (`n`, `m`, `cls`, `af`)  
 - A numerical matrix (`S`)  
 
 Together, these inputs define the interface between R and the compiled C++/Fortran implementations. Ensuring that this interface is well-defined and consistent is critical for enabling interchangeable backends and reproducible results.
-
 
 
 ```r
@@ -258,10 +261,6 @@ S <- matrix(rnorm(m * nt), nrow = m, ncol = nt)
 ## Running the Model
 
 This section demonstrates how to execute the same computation using different compiled backends and compare their performance.
-
-- Multiple compiled implementations can be accessed through the same R interface  
-- Performance differences between C++ and Fortran implementations can be evaluated directly  
-- The system supports reproducible benchmarking in an HPC setting  
 
 This is a key part of the workflow: separating *interface (R)* from *implementation (C++/Fortran)* while allowing direct comparison and optimization.
 
@@ -393,7 +392,7 @@ stopifnot(isTRUE(all.equal(grs_cpp, grs_external, tolerance = tol)))
 
 ## Architecture
 
-The following diagram summarizes how the R interface is connected to different compiled backends:
+The following diagram summarizes how the R interface is connected to different compiled backends in `qgtools`:
 
 ```
 User (R)
@@ -476,6 +475,8 @@ The external library in `inst/demo/shared_lib/` serves as a reference implementa
 ## Extending the framework
 
 One of the main advantages of the `qgtools` design is that new high-performance implementations can be added without modifying the user-facing R interface.
+
+All backends must follow the same input/output interface, which enables seamless interchangeability.
 
 This section outlines how to integrate custom C++ or Fortran code and expose it through the same workflow.
 
@@ -591,4 +592,5 @@ Once Rtools is installed and available on the system PATH, the examples in this 
 system("g++ --version")
 system("gfortran --version")
 ```
+
 If these commands return valid version information, the toolchain is correctly configured.
