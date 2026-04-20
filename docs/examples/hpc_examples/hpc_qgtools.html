@@ -4080,23 +4080,15 @@ window.Quarto = {
 <ul>
 <li>Use interchangeable backends from R<br>
 </li>
-<li>Benchmark and validate implementations<br>
+<li>Integrate C++/Fortran code via <code>.Call()</code> and external shared libraries<br>
 </li>
 <li>Scale computations using OpenMP<br>
 </li>
-<li>Extend the framework without modifying the core R package</li>
-</ul>
-<p>Specifically, it shows how to:</p>
-<ul>
-<li>Call compiled code from R using <code>.Call()</code><br>
-</li>
-<li>Implement interchangeable backends with identical interfaces<br>
-</li>
-<li>Build and load external shared libraries (<code>libqgtools</code>)<br>
+<li>Benchmark and compare implementations<br>
 </li>
 <li>Ensure numerical consistency across implementations<br>
 </li>
-<li>Transition from portable reference code to optimized HPC implementations</li>
+<li>Extend the framework without modifying the core R package</li>
 </ul>
 <p>This design enables users and collaborators to prototype algorithms, replace performance-critical components, and integrate custom implementations into a unified workflow.</p>
 <p>In the following section, this framework is motivated using polygenic risk score (PRS) computation, a simple operation that becomes computationally demanding at biobank scale.</p>

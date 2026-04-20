@@ -13,17 +13,11 @@ execute:
 This tutorial demonstrates how to:
 
 - Use interchangeable backends from R  
-- Benchmark and validate implementations  
+- Integrate C++/Fortran code via `.Call()` and external shared libraries  
 - Scale computations using OpenMP  
-- Extend the framework without modifying the core R package  
-
-Specifically, it shows how to:
-
-- Call compiled code from R using `.Call()`  
-- Implement interchangeable backends with identical interfaces  
-- Build and load external shared libraries (`libqgtools`)  
+- Benchmark and compare implementations  
 - Ensure numerical consistency across implementations  
-- Transition from portable reference code to optimized HPC implementations  
+- Extend the framework without modifying the core R package  
 
 This design enables users and collaborators to prototype algorithms, replace performance-critical components, and integrate custom implementations into a unified workflow.
 
