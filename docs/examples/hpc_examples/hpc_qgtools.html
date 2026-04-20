@@ -4077,19 +4077,17 @@ window.Quarto = {
 
 <section id="introduction" class="level2">
 <h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
-<p>This tutorial demonstrates how to use <code>qgtools</code> as a flexible framework for integrating high-performance compiled code into R workflows.</p>
-<p>Rather than focusing on a specific application, the goal is to show how a single R interface can be backed by multiple interchangeable implementations written in C++, Fortran, and external shared libraries.</p>
-<p>Here it is demonstrated how to:</p>
-<ul>
-<li>Interchanged transparently from R<br>
-</li>
-<li>Benchmarked and validated against each other<br>
-</li>
-<li>Scaled using OpenMP for multi-core execution<br>
-</li>
-<li>Extended without modifying the core R package</li>
-</ul>
 <p>This tutorial demonstrates how to:</p>
+<ul>
+<li>Use interchangeable backends from R<br>
+</li>
+<li>Benchmark and validate implementations<br>
+</li>
+<li>Scale computations using OpenMP<br>
+</li>
+<li>Extend the framework without modifying the core R package</li>
+</ul>
+<p>Specifically, it shows how to:</p>
 <ul>
 <li>Call compiled code from R using <code>.Call()</code><br>
 </li>
@@ -4255,62 +4253,44 @@ Restrict BLAS libraries (used internally by R) to a single thread. This is criti
 <li>A numerical matrix (<code>S</code>)</li>
 </ul>
 <p>Together, these inputs define the interface between R and the compiled C++/Fortran implementations. Ensuring that this interface is well-defined and consistent is critical for enabling interchangeable backends and reproducible results.</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>data_dir <span class="ot">&lt;-</span> <span class="st">&quot;path/to/your/data/plink&quot;</span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">dir.create</span>(data_dir, <span class="at">recursive =</span> <span class="cn">TRUE</span>, <span class="at">showWarnings =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>files <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;bed&quot;</span>, <span class="st">&quot;bim&quot;</span>, <span class="st">&quot;fam&quot;</span>, <span class="st">&quot;pheno&quot;</span>, <span class="st">&quot;covar&quot;</span>)</span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (f <span class="cf">in</span> files) {</span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>  url <span class="ot">&lt;-</span> <span class="fu">sprintf</span>(</span>
-<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;https://github.com/psoerensen/qgdata/raw/main/simulated_human_data/human.%s&quot;</span>,</span>
-<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>    f</span>
-<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">download.file</span>(url, <span class="at">destfile =</span> <span class="fu">file.path</span>(data_dir, <span class="fu">paste0</span>(<span class="st">&quot;human.&quot;</span>, f)), <span class="at">mode =</span> <span class="st">&quot;wb&quot;</span>)</span>
-<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>Glist <span class="ot">&lt;-</span> <span class="fu">gprep</span>(</span>
-<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">study =</span> <span class="st">&quot;Example&quot;</span>,</span>
-<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>  <span class="at">bedfiles =</span> <span class="fu">file.path</span>(data_dir, <span class="st">&quot;human.bed&quot;</span>),</span>
-<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>  <span class="at">bimfiles =</span> <span class="fu">file.path</span>(data_dir, <span class="st">&quot;human.bim&quot;</span>),</span>
-<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>  <span class="at">famfiles =</span> <span class="fu">file.path</span>(data_dir, <span class="st">&quot;human.fam&quot;</span>)</span>
-<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>chr <span class="ot">&lt;-</span> <span class="dv">1</span></span>
-<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>file <span class="ot">&lt;-</span> Glist<span class="sc">$</span>bedfiles[chr]</span>
-<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>n <span class="ot">&lt;-</span> Glist<span class="sc">$</span>n</span>
-<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a>m <span class="ot">&lt;-</span> Glist<span class="sc">$</span>mchr[chr]</span>
-<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a>nt <span class="ot">&lt;-</span> <span class="dv">50</span></span>
-<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a>cls <span class="ot">&lt;-</span> <span class="dv">1</span><span class="sc">:</span>m</span>
-<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a>af  <span class="ot">&lt;-</span> Glist<span class="sc">$</span>af[[chr]]</span>
-<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a>S <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">rnorm</span>(m <span class="sc">*</span> nt), <span class="at">nrow =</span> m, <span class="at">ncol =</span> nt)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p><strong>Explanation</strong></p>
-<ul>
-<li><p><code>data_dir</code><br>
-Defines a user-specific directory where example data will be downloaded. This avoids hardcoding system-dependent paths.</p></li>
-<li><p><code>download.file(...)</code><br>
-Downloads PLINK genotype files (<code>.bed</code>, <code>.bim</code>, <code>.fam</code>) and associated phenotype/covariate data from a public repository.</p></li>
-<li><p><code>gprep(...)</code><br>
-Preprocesses genotype data and constructs a <code>Glist</code> object, which stores metadata and indexing structures used by downstream functions.</p></li>
-<li><p><code>file</code>, <code>n</code>, <code>m</code><br>
-Extract key information from <code>Glist</code>:</p>
-<ul>
-<li><code>file</code>: path to the genotype file<br>
-</li>
-<li><code>n</code>: number of individuals<br>
-</li>
-<li><code>m</code>: number of SNPs for the selected chromosome</li>
-</ul></li>
-<li><p><code>nt</code><br>
-Defines the number of traits (or response variables). This is used to construct a multi-trait input matrix.</p></li>
-<li><p><code>cls</code><br>
-SNP index vector (1-based). Determines which markers are included in the computation.</p></li>
-<li><p><code>af</code><br>
-Allele frequencies for the selected chromosome. These are typically used for scaling or normalization inside the compiled code.</p></li>
-<li><p><code>S</code><br>
-A SNP-by-trait matrix of effects. In this example, values are simulated, but in practice they would come from statistical models or prior analyses.</p></li>
-</ul>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Directory where example data will be stored</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>data_dir <span class="ot">&lt;-</span> <span class="st">&quot;path/to/your/data/plink&quot;</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="fu">dir.create</span>(data_dir, <span class="at">recursive =</span> <span class="cn">TRUE</span>, <span class="at">showWarnings =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Download PLINK files and associated data</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>files <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;bed&quot;</span>, <span class="st">&quot;bim&quot;</span>, <span class="st">&quot;fam&quot;</span>, <span class="st">&quot;pheno&quot;</span>, <span class="st">&quot;covar&quot;</span>)</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (f <span class="cf">in</span> files) {</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>  url <span class="ot">&lt;-</span> <span class="fu">sprintf</span>(</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;https://github.com/psoerensen/qgdata/raw/main/simulated_human_data/human.%s&quot;</span>,</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>    f</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">download.file</span>(url,</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>                <span class="at">destfile =</span> <span class="fu">file.path</span>(data_dir, <span class="fu">paste0</span>(<span class="st">&quot;human.&quot;</span>, f)),</span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>                <span class="at">mode =</span> <span class="st">&quot;wb&quot;</span>)</span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a><span class="co"># Prepare genotype metadata structure</span></span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>Glist <span class="ot">&lt;-</span> <span class="fu">gprep</span>(</span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>  <span class="at">study =</span> <span class="st">&quot;Example&quot;</span>,</span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>  <span class="at">bedfiles =</span> <span class="fu">file.path</span>(data_dir, <span class="st">&quot;human.bed&quot;</span>),</span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>  <span class="at">bimfiles =</span> <span class="fu">file.path</span>(data_dir, <span class="st">&quot;human.bim&quot;</span>),</span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>  <span class="at">famfiles =</span> <span class="fu">file.path</span>(data_dir, <span class="st">&quot;human.fam&quot;</span>)</span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a><span class="co"># Extract key inputs</span></span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a>chr <span class="ot">&lt;-</span> <span class="dv">1</span></span>
+<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a>file <span class="ot">&lt;-</span> Glist<span class="sc">$</span>bedfiles[chr]  <span class="co"># genotype file</span></span>
+<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a>n <span class="ot">&lt;-</span> Glist<span class="sc">$</span>n                 <span class="co"># number of individuals</span></span>
+<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a>m <span class="ot">&lt;-</span> Glist<span class="sc">$</span>mchr[chr]         <span class="co"># number of SNPs</span></span>
+<span id="cb5-31"><a href="#cb5-31" aria-hidden="true" tabindex="-1"></a>nt <span class="ot">&lt;-</span> <span class="dv">50</span>                     <span class="co"># number of traits</span></span>
+<span id="cb5-32"><a href="#cb5-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-33"><a href="#cb5-33" aria-hidden="true" tabindex="-1"></a><span class="co"># SNP selection and allele frequencies</span></span>
+<span id="cb5-34"><a href="#cb5-34" aria-hidden="true" tabindex="-1"></a>cls <span class="ot">&lt;-</span> <span class="dv">1</span><span class="sc">:</span>m                   <span class="co"># SNP indices</span></span>
+<span id="cb5-35"><a href="#cb5-35" aria-hidden="true" tabindex="-1"></a>af  <span class="ot">&lt;-</span> Glist<span class="sc">$</span>af[[chr]]       <span class="co"># allele frequencies</span></span>
+<span id="cb5-36"><a href="#cb5-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-37"><a href="#cb5-37" aria-hidden="true" tabindex="-1"></a><span class="co"># SNP x trait effect matrix</span></span>
+<span id="cb5-38"><a href="#cb5-38" aria-hidden="true" tabindex="-1"></a>S <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">rnorm</span>(m <span class="sc">*</span> nt), <span class="at">nrow =</span> m, <span class="at">ncol =</span> nt)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="running-the-model" class="level2">
 <h2 class="anchored" data-anchor-id="running-the-model">Running the Model</h2>

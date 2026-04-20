@@ -10,18 +10,14 @@ execute:
 
 ## Introduction
 
-This tutorial demonstrates how to use `qgtools` as a flexible framework for integrating high-performance compiled code into R workflows.
-
-Rather than focusing on a specific application, the goal is to show how a single R interface can be backed by multiple interchangeable implementations written in C++, Fortran, and external shared libraries.
-
-Here it is demonstrated how to:
-
-- Interchanged transparently from R  
-- Benchmarked and validated against each other  
-- Scaled using OpenMP for multi-core execution  
-- Extended without modifying the core R package  
-
 This tutorial demonstrates how to:
+
+- Use interchangeable backends from R  
+- Benchmark and validate implementations  
+- Scale computations using OpenMP  
+- Extend the framework without modifying the core R package  
+
+Specifically, it shows how to:
 
 - Call compiled code from R using `.Call()`  
 - Implement interchangeable backends with identical interfaces  
@@ -195,9 +191,11 @@ Together, these inputs define the interface between R and the compiled C++/Fortr
 
 
 ```r
+# Directory where example data will be stored
 data_dir <- "path/to/your/data/plink"
 dir.create(data_dir, recursive = TRUE, showWarnings = FALSE)
 
+# Download PLINK files and associated data
 files <- c("bed", "bim", "fam", "pheno", "covar")
 
 for (f in files) {
@@ -205,9 +203,12 @@ for (f in files) {
     "https://github.com/psoerensen/qgdata/raw/main/simulated_human_data/human.%s",
     f
   )
-  download.file(url, destfile = file.path(data_dir, paste0("human.", f)), mode = "wb")
+  download.file(url,
+                destfile = file.path(data_dir, paste0("human.", f)),
+                mode = "wb")
 }
 
+# Prepare genotype metadata structure
 Glist <- gprep(
   study = "Example",
   bedfiles = file.path(data_dir, "human.bed"),
@@ -215,46 +216,22 @@ Glist <- gprep(
   famfiles = file.path(data_dir, "human.fam")
 )
 
+# Extract key inputs
 chr <- 1
-file <- Glist$bedfiles[chr]
-n <- Glist$n
-m <- Glist$mchr[chr]
-nt <- 50
+file <- Glist$bedfiles[chr]  # genotype file
+n <- Glist$n                 # number of individuals
+m <- Glist$mchr[chr]         # number of SNPs
+nt <- 50                     # number of traits
 
-cls <- 1:m
-af  <- Glist$af[[chr]]
+# SNP selection and allele frequencies
+cls <- 1:m                   # SNP indices
+af  <- Glist$af[[chr]]       # allele frequencies
 
+# SNP x trait effect matrix
 S <- matrix(rnorm(m * nt), nrow = m, ncol = nt)
+
 ```
 
-**Explanation**
-
-- `data_dir`  
-  Defines a user-specific directory where example data will be downloaded. This avoids hardcoding system-dependent paths.
-
-- `download.file(...)`  
-  Downloads PLINK genotype files (`.bed`, `.bim`, `.fam`) and associated phenotype/covariate data from a public repository.
-
-- `gprep(...)`  
-  Preprocesses genotype data and constructs a `Glist` object, which stores metadata and indexing structures used by downstream functions.
-
-- `file`, `n`, `m`  
-  Extract key information from `Glist`:
-  - `file`: path to the genotype file  
-  - `n`: number of individuals  
-  - `m`: number of SNPs for the selected chromosome  
-
-- `nt`  
-  Defines the number of traits (or response variables). This is used to construct a multi-trait input matrix.
-
-- `cls`  
-  SNP index vector (1-based). Determines which markers are included in the computation.
-
-- `af`  
-  Allele frequencies for the selected chromosome. These are typically used for scaling or normalization inside the compiled code.
-
-- `S`  
-  A SNP-by-trait matrix of effects. In this example, values are simulated, but in practice they would come from statistical models or prior analyses.
 
 
 
