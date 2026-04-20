@@ -386,7 +386,7 @@ Backend selection
 -----------------------------------------------------------
 ```
 
-### Project structure
+### Mapping to project structure
 
 The `qgtools` repository is organized to clearly separate:
 
@@ -452,9 +452,9 @@ The external library in `inst/demo/shared_lib/` serves as a reference implementa
 
 One of the main advantages of the `qgtools` design is that new high-performance implementations can be added without modifying the user-facing R interface.
 
-All backends must follow the same input/output interface, which enables seamless interchangeability.
+All backends must follow the same input/output interface, ensuring seamless interchangeability.
 
-This section outlines how to integrate custom C++ or Fortran code and expose it through the same workflow.
+This section outlines how to integrate custom C++ or Fortran code and expose it within the same workflow.
 
 
 ### 1. Adding a new C++ implementation
@@ -529,22 +529,12 @@ switch(
 ```r
 dyn.load("libqgtools.so")
 ```
-
-### Summary
-
-This structure allows:
-
-- Modular extensions
-- Consistent interfaces
-- Independent optimization of compiled code
-
-
 ## Takeaways
 
-- Single R interface, multiple implementations
-- Portable → high-performance transition
-- Numerical consistency ensured
-- Modular and extensible design
+- A single R interface supports multiple interchangeable implementations  
+- Computations can scale from portable code to high-performance backends  
+- Numerical consistency is maintained across implementations  
+- The framework enables modular, extensible integration of compiled code  
 
 
 ### Platform notes

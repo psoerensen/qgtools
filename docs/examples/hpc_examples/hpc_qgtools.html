@@ -4035,7 +4035,7 @@ window.Quarto = {
   <li><a href="#external-backend" id="toc-external-backend" class="nav-link" data-scroll-target="#external-backend">External Backend</a></li>
   <li><a href="#architecture" id="toc-architecture" class="nav-link" data-scroll-target="#architecture">Architecture</a>
   <ul class="collapse">
-  <li><a href="#project-structure" id="toc-project-structure" class="nav-link" data-scroll-target="#project-structure">Project structure</a></li>
+  <li><a href="#mapping-to-project-structure" id="toc-mapping-to-project-structure" class="nav-link" data-scroll-target="#mapping-to-project-structure">Mapping to project structure</a></li>
   </ul></li>
   <li><a href="#extending-the-framework" id="toc-extending-the-framework" class="nav-link" data-scroll-target="#extending-the-framework">Extending the framework</a>
   <ul class="collapse">
@@ -4044,7 +4044,6 @@ window.Quarto = {
   <li><a href="#calling-from-r" id="toc-calling-from-r" class="nav-link" data-scroll-target="#calling-from-r">3. Calling from R</a></li>
   <li><a href="#integrating-as-a-new-backend" id="toc-integrating-as-a-new-backend" class="nav-link" data-scroll-target="#integrating-as-a-new-backend">4. Integrating as a new backend</a></li>
   <li><a href="#using-external-shared-libraries" id="toc-using-external-shared-libraries" class="nav-link" data-scroll-target="#using-external-shared-libraries">5. Using external shared libraries</a></li>
-  <li><a href="#summary" id="toc-summary" class="nav-link" data-scroll-target="#summary">Summary</a></li>
   </ul></li>
   <li><a href="#takeaways" id="toc-takeaways" class="nav-link" data-scroll-target="#takeaways">Takeaways</a>
   <ul class="collapse">
@@ -4424,8 +4423,8 @@ Backend selection
 | external_cpp      (shared library plugin using C++)     |
 | external_fortran  (shared library plugin using Fortran) |
 -----------------------------------------------------------</code></pre>
-<section id="project-structure" class="level3">
-<h3 class="anchored" data-anchor-id="project-structure">Project structure</h3>
+<section id="mapping-to-project-structure" class="level3">
+<h3 class="anchored" data-anchor-id="mapping-to-project-structure">Mapping to project structure</h3>
 <p>The <code>qgtools</code> repository is organized to clearly separate:</p>
 <ul>
 <li>Package-integrated implementations</li>
@@ -4488,8 +4487,8 @@ Backend selection
 <section id="extending-the-framework" class="level2">
 <h2 class="anchored" data-anchor-id="extending-the-framework">Extending the framework</h2>
 <p>One of the main advantages of the <code>qgtools</code> design is that new high-performance implementations can be added without modifying the user-facing R interface.</p>
-<p>All backends must follow the same input/output interface, which enables seamless interchangeability.</p>
-<p>This section outlines how to integrate custom C++ or Fortran code and expose it through the same workflow.</p>
+<p>All backends must follow the same input/output interface, ensuring seamless interchangeability.</p>
+<p>This section outlines how to integrate custom C++ or Fortran code and expose it within the same workflow.</p>
 <section id="adding-a-new-c-implementation" class="level3">
 <h3 class="anchored" data-anchor-id="adding-a-new-c-implementation">1. Adding a new C++ implementation</h3>
 <p>A new backend typically consists of:</p>
@@ -4552,23 +4551,17 @@ Backend selection
 <h3 class="anchored" data-anchor-id="using-external-shared-libraries">5. Using external shared libraries</h3>
 <div class="sourceCode" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">dyn.load</span>(<span class="st">&quot;libqgtools.so&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
-<section id="summary" class="level3">
-<h3 class="anchored" data-anchor-id="summary">Summary</h3>
-<p>This structure allows:</p>
-<ul>
-<li>Modular extensions</li>
-<li>Consistent interfaces</li>
-<li>Independent optimization of compiled code</li>
-</ul>
-</section>
 </section>
 <section id="takeaways" class="level2">
 <h2 class="anchored" data-anchor-id="takeaways">Takeaways</h2>
 <ul>
-<li>Single R interface, multiple implementations</li>
-<li>Portable → high-performance transition</li>
-<li>Numerical consistency ensured</li>
-<li>Modular and extensible design</li>
+<li>A single R interface supports multiple interchangeable implementations<br>
+</li>
+<li>Computations can scale from portable code to high-performance backends<br>
+</li>
+<li>Numerical consistency is maintained across implementations<br>
+</li>
+<li>The framework enables modular, extensible integration of compiled code</li>
 </ul>
 <section id="platform-notes" class="level3">
 <h3 class="anchored" data-anchor-id="platform-notes">Platform notes</h3>
