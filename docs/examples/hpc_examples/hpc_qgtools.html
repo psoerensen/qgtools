@@ -4426,19 +4426,21 @@ Backend selection
 <pre class="text"><code>qgtools/src/</code></pre>
 <p>This directory contains the compiled code that is built and linked directly into the <code>qgtools</code> R package.</p>
 <ul>
-<li><p><code>mtgrsbed_core.cpp</code> / <code>.f90</code> → core computational kernels (C++ and Fortran implementations)<br>
-</p></li>
-<li><p><code>mtgrsbed_core.h</code> / <code>_f.h</code> → header files defining interfaces for the core routines<br>
-</p></li>
-<li><p><code>mtgrsbed_call.cpp</code> → <code>.Call()</code> interface layer connecting R to compiled code<br>
-</p></li>
-<li><p><code>qgtools_init.c</code> → registration of <code>.Call()</code> routines with R<br>
-</p></li>
-<li><p><code>qgtools-package.cpp</code> → package-level initialization and linkage</p></li>
-<li><p><code>Makevars</code> / <code>Makevars.win</code> → platform-specific build configuration for compiling C++ and Fortran code</p></li>
-<li><p><code>.o</code> files → compiled object files (intermediate build artifacts)<br>
-</p></li>
-<li><p><code>qgtools.dll</code> → compiled shared library (Windows) used by the R package</p></li>
+<li><code>mtgrsbed_core.cpp</code> / <code>.f90</code> → core computational kernels (C++ and Fortran implementations)<br>
+</li>
+<li><code>mtgrsbed_core.h</code> / <code>_f.h</code> → header files defining interfaces for the core routines<br>
+</li>
+<li><code>mtgrsbed_call.cpp</code> → <code>.Call()</code> interface layer connecting R to compiled code<br>
+</li>
+<li><code>qgtools_init.c</code> → registration of <code>.Call()</code> routines with R<br>
+</li>
+<li><code>qgtools-package.cpp</code> → package-level initialization and linkage<br>
+</li>
+<li><code>Makevars</code> / <code>Makevars.win</code> → platform-specific build configuration for compiling C++ and Fortran code<br>
+</li>
+<li><code>.o</code> files → compiled object files (intermediate build artifacts)<br>
+</li>
+<li><code>qgtools.dll</code> → compiled shared library (Windows) used by the R package</li>
 </ul>
 <p><strong>Key idea</strong></p>
 <ul>

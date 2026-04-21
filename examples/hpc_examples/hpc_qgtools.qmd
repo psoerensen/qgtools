@@ -401,9 +401,7 @@ This directory contains the compiled code that is built and linked directly into
 - `mtgrsbed_call.cpp` → `.Call()` interface layer connecting R to compiled code  
 - `qgtools_init.c` → registration of `.Call()` routines with R  
 - `qgtools-package.cpp` → package-level initialization and linkage  
-
 - `Makevars` / `Makevars.win` → platform-specific build configuration for compiling C++ and Fortran code  
-
 - `.o` files → compiled object files (intermediate build artifacts)  
 - `qgtools.dll` → compiled shared library (Windows) used by the R package  
 
