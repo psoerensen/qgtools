@@ -4424,15 +4424,38 @@ Backend selection
 </ul>
 <p><strong>Core package code (<code>src/</code>)</strong> <a href="https://github.com/psoerensen/qgtools/tree/main/src">View source on GitHub</a></p>
 <pre class="text"><code>qgtools/src/</code></pre>
-<p>This directory contains:</p>
+<p>This directory contains the compiled code that is built and linked directly into the <code>qgtools</code> R package.</p>
 <ul>
-<li>C++ and Fortran implementations compiled as part of the R package</li>
-<li><code>.Call()</code> interfaces exposed through the package namespace</li>
-<li>Internal backends:
+<li><p><code>mtgrsbed_core.cpp</code> / <code>.f90</code> → core computational kernels (C++ and Fortran implementations)<br>
+</p></li>
+<li><p><code>mtgrsbed_core.h</code> / <code>_f.h</code> → header files defining interfaces for the core routines<br>
+</p></li>
+<li><p><code>mtgrsbed_call.cpp</code> → <code>.Call()</code> interface layer connecting R to compiled code<br>
+</p></li>
+<li><p><code>qgtools_init.c</code> → registration of <code>.Call()</code> routines with R<br>
+</p></li>
+<li><p><code>qgtools-package.cpp</code> → package-level initialization and linkage</p></li>
+<li><p><code>Makevars</code> / <code>Makevars.win</code> → platform-specific build configuration for compiling C++ and Fortran code</p></li>
+<li><p><code>.o</code> files → compiled object files (intermediate build artifacts)<br>
+</p></li>
+<li><p><code>qgtools.dll</code> → compiled shared library (Windows) used by the R package</p></li>
+</ul>
+<p><strong>Key idea</strong></p>
 <ul>
-<li><code>internal_cpp</code></li>
-<li><code>internal_fortran</code></li>
-</ul></li>
+<li>Code in <code>src/</code> is compiled as part of the R package<br>
+</li>
+<li>Functions are exposed to R via <code>.Call()</code><br>
+</li>
+<li>This represents the internal backends (<code>internal_cpp</code>, <code>internal_fortran</code>)</li>
+</ul>
+<p><strong>Why this matters</strong></p>
+<p>This structure:</p>
+<ul>
+<li>Provides high-performance implementations bundled with the package<br>
+</li>
+<li>Ensures portability across systems<br>
+</li>
+<li>Serves as a reference for external integrations</li>
 </ul>
 <p>This is the standard way to integrate compiled code into an R package.</p>
 <p><strong>External library example (<code>inst/demo/shared_lib/</code>)</strong> <a href="https://github.com/psoerensen/qgtools/tree/main/inst/demo/shared_lib">View source on GitHub</a></p>

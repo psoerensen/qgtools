@@ -387,19 +387,39 @@ The `qgtools` repository is organized to clearly separate:
 - Package-integrated implementations
 - External shared library implementations
 
+
 **Core package code (`src/`)**
 [View source on GitHub](https://github.com/psoerensen/qgtools/tree/main/src)
 ```text
 qgtools/src/
 ```
 
-This directory contains:
+This directory contains the compiled code that is built and linked directly into the `qgtools` R package.
 
-- C++ and Fortran implementations compiled as part of the R package
-- `.Call()` interfaces exposed through the package namespace
-- Internal backends:
-  - `internal_cpp`
-  - `internal_fortran`
+- `mtgrsbed_core.cpp` / `.f90` → core computational kernels (C++ and Fortran implementations)  
+- `mtgrsbed_core.h` / `_f.h` → header files defining interfaces for the core routines  
+- `mtgrsbed_call.cpp` → `.Call()` interface layer connecting R to compiled code  
+- `qgtools_init.c` → registration of `.Call()` routines with R  
+- `qgtools-package.cpp` → package-level initialization and linkage  
+
+- `Makevars` / `Makevars.win` → platform-specific build configuration for compiling C++ and Fortran code  
+
+- `.o` files → compiled object files (intermediate build artifacts)  
+- `qgtools.dll` → compiled shared library (Windows) used by the R package  
+
+**Key idea**
+
+- Code in `src/` is compiled as part of the R package  
+- Functions are exposed to R via `.Call()`  
+- This represents the internal backends (`internal_cpp`, `internal_fortran`)  
+
+**Why this matters**
+
+This structure:
+
+- Provides high-performance implementations bundled with the package  
+- Ensures portability across systems  
+- Serves as a reference for external integrations  
 
 This is the standard way to integrate compiled code into an R package.
 
